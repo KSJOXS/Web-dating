@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}Sign Up - Dating App{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-center align-items-center vh-100">
+    <div class="card p-4 shadow-lg border-0" style="width: 400px; border-radius: 12px;">
+        <h2 class="text-center mb-3 fw-bold">Create Your Account</h2>
+
+        <form method="POST" action="{{ url_for('register') }}">
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Username</label>
+                <input type="text" class="form-control rounded-pill" placeholder="Choose a username" required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Email</label>
+                <input type="email" class="form-control rounded-pill" placeholder="Enter your email" required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Password</label>
+                <input type="password" class="form-control rounded-pill" placeholder="Enter a strong password" required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Confirm Password</label>
+                <input type="password" class="form-control rounded-pill" placeholder="Confirm your password" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100 rounded-pill">Sign Up</button>
+        </form>
+
+        <p class="text-center mt-3">
+            Already have an account? <a href="{{ url_for('login') }}" class="text-primary fw-bold text-decoration-none">Login</a>
+        </p>
+    </div>
+</div>
+{% endblock %}

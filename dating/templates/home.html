@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Dating App{% endblock %}
+
+{% block content %}
+<div class="home-container d-flex justify-content-center align-items-center vh-100">
+    <div class="text-center">
+        <h1 class="fw-bold">🔥 Welcome to DatingApp</h1>
+        <p class="lead text-muted">Swipe. Match. Connect. Find your perfect match today.</p>
+
+        <div class="mt-4">
+            {% if current_user.is_authenticated %}
+                <a href="{{ url_for('explore') }}" class="btn btn-danger btn-lg rounded-pill px-4">
+                    Start Matching ❤️
+                </a>
+            {% else %}
+                <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg rounded-pill px-4">
+                    Sign Up & Find Love 💕
+                </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
