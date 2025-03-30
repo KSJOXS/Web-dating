@@ -61,6 +61,20 @@ def logout():
 def explore():
     return render_template('explore.html')
 
+with app.app_context():
+    db.create_all()
+
+    if not User.query.first():  # Only add fake users if the database is empty
+        fake_users = [
+            User(username="Alice", email="alice@example.com", password=bcrypt.generate_password_hash("test123").decode("utf-8")),
+            User(username="Bob", email="bob@example.com", password=bcrypt.generate_password_hash("test123").decode("utf-8")),
+            User(username="Charlie", email="charlie@example.com", password=bcrypt.generate_password_hash("test123").decode("utf-8")),
+        ]
+        db.session.add_all(fake_users)
+        db.session.commit()
+        print("✅ Fake users added for testing!")
+
+        
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()  # สร้างฐานข้อมูลอัตโนมัติ
