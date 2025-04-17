@@ -6,17 +6,28 @@
 <div class="container mt-5">
     <h2 class="text-center">Your Profile</h2>
 
-    {% if user.profile %}
-        <img src="{{ user.profile.profile_picture }}" alt="Profile Picture" class="img-fluid rounded-circle mb-3" width="150">
-        <p><strong>Name:</strong> {{ user.profile.first_name }} {{ user.profile.last_name }}</p>
-        <p><strong>Gender:</strong> {{ user.profile.gender }}</p>
-        <p><strong>Date of Birth:</strong> {{ user.profile.date_of_birth }}</p>
-        <p><strong>Bio:</strong> {{ user.profile.bio }}</p>
-        <p><strong>Location:</strong> {{ user.profile.location }}</p>
-        <p><strong>Interests:</strong> {{ user.profile.interests }}</p>
+    {% if user %}
+        {% if user.profile_picture %}
+            <img src="{{ url_for('static', filename='uploads/' ~ user.profile_picture) }}"
+                 alt="Profile Picture" class="img-fluid rounded-circle mb-3" width="150">
+        {% endif %}
+
+        <p><strong>Name:</strong> {{ user.first_name }} {{ user.last_name }}</p>
+        <p><strong>Gender:</strong> {{ user.gender }}</p>
+        <p><strong>Date of Birth:</strong> {{ user.date_of_birth }}</p>
+        <p><strong>Bio:</strong> {{ user.bio }}</p>
+        <p><strong>Location:</strong> {{ user.location }}</p>
+        <p><strong>Interests:</strong> {{ user.interests }}</p>
+
+        <div class="text-center mt-3">
+            <a href="{{ url_for('create_profile') }}" class="btn btn-primary">Edit Profile</a>
+        </div>
+
     {% else %}
         <p class="text-center">You haven't created your profile yet.</p>
-        <a href="{{ url_for('create_profile') }}" class="btn btn-primary">Create Profile</a>
+        <div class="text-center mt-3">
+            <a href="{{ url_for('create_profile') }}" class="btn btn-primary">Create Profile</a>
+        </div>
     {% endif %}
 </div>
 {% endblock %}
