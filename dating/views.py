@@ -175,6 +175,7 @@ def create_profile():
         return redirect(url_for('profile'))
 
     return render_template('create_profile.html', form=form)
+<<<<<<< HEAD
 
 @app.route('/support')
 def support():
@@ -215,3 +216,5 @@ def matches():
         })
 
     return render_template('matches.html', profile=profile_data, matches=matches_data)
+=======
+>>>>>>> a895175acf332ece18893ab17618b06f53d3b2bf
