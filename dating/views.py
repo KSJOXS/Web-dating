@@ -175,3 +175,43 @@ def create_profile():
         return redirect(url_for('profile'))
 
     return render_template('create_profile.html', form=form)
+
+@app.route('/support')
+def support():
+    return render_template('support.html')
+
+@app.route('/learn')
+def learn():
+    return render_template('learn.html')
+
+@app.route('/chat')
+def chat():
+    return render_template('chat.html')
+
+@app.route('/matches')
+@login_required
+def matches():
+    user = current_user  # This gets the currently logged-in user object
+
+    profile_data = {
+        'first_name': user.first_name,
+        'location': user.location,
+        'interests': user.interests,
+        'profile_picture': user.profile_picture,
+       # 'age': calculate_age(user.date_of_birth)
+        # Add other profile information you want to display in the sidebar
+    }
+
+    potential_matches = User.query.filter(User.user_id != user.user_id).all()  # Example logic to fetch potential matches
+
+    matches_data = []
+    for match in potential_matches:
+        matches_data.append({
+            'id': match.user_id,
+            'name': match.first_name, # Or a full name field
+            'interests': match.interests,
+            'profile_picture': match.profile_picture
+            # Add other relevant match information
+        })
+
+    return render_template('matches.html', profile=profile_data, matches=matches_data)

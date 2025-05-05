@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Learn - Dating App</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding-top: 60px; /* Adjust for navbar */
+            padding-bottom: 60px; /* Adjust for footer */
+        }
+        .learn-container {
+            max-width: 800px;
+            margin: 20px auto;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        }
+        h1, h2, h3 {
+            color: #007bff; /* A different brand color */
+            margin-bottom: 20px;
+        }
+        h2 {
+            margin-top: 30px;
+        }
+        .learn-section {
+            margin-bottom: 30px;
+        }
+        .learn-section p {
+            line-height: 1.6;
+            margin-bottom: 15px;
+            color: #495057;
+        }
+        .learn-list {
+            padding-left: 20px;
+            margin-bottom: 15px;
+        }
+        .learn-list li {
+            margin-bottom: 8px;
+            color: #495057;
+        }
+        .tip-box {
+            background-color: #e9ecef;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 5px solid #28a745; /* Success color for tips */
+        }
+        .tip-box h4 {
+            color: #28a745;
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+        .safety-info {
+            background-color: #fdecea; /* Light red for caution */
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 5px solid #dc3545; /* Danger color for safety */
+        }
+        .safety-info h3 {
+            color: #dc3545;
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm fixed-top">
+        <div class="container">
+            <a class="navbar-brand fw-bold fs-4 text-danger" href="{{ url_for('home') }}">🔥 Dating App</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse justify-content-center" id="navbarNav">
+                <ul class="navbar-nav gap-3">
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('explore') }}">Explore</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="{{ url_for('learn') }}">Learn</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('safety') }}">Safety</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('support') }}">Support</a></li>
+                </ul>
+            </div>
+            <div>
+                {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('profile') }}" class="btn btn-outline-dark rounded-pill me-2">Profile</a>
+                    <a href="{{ url_for('logout') }}" class="btn btn-danger rounded-pill">Log out</a>
+                {% else %}
+                    <a href="{{ url_for('login') }}" class="btn btn-outline-dark rounded-pill me-2">Log in</a>
+                    <a href="{{ url_for('register') }}" class="btn btn-danger rounded-pill">Sign up</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <div class="learn-container">
+        <h1>Learn How to Make the Most of {{ config.get('APP_NAME', 'Our Dating App') }}</h1>
+
+        <div class="learn-section getting-started">
+            <h2>Getting Started</h2>
+            <p>Welcome to {{ config.get('APP_NAME', 'Our Dating App') }}! We're excited to help you connect with new people. Here's a quick guide to get you started:</p>
+            <ol class="learn-list">
+                <li><strong>Create Your Profile:</strong> Take the time to fill out your profile accurately and honestly. Include details about your interests, what you're looking for, and upload some clear and recent photos. Your profile is your first impression!</li>
+                <li><strong>Explore Potential Matches:</strong> Use our "Explore" feature to browse profiles of other members. You can filter by various criteria to find people who align with your preferences.</li>
+                <li><strong>Show Interest:</strong> If someone catches your eye, you can "like" their profile. If they like you back, it's a match!</li>
+                <li><strong>Start a Conversation:</strong> Once you have a match, don't be shy! Send a friendly message to break the ice and get to know them better.</li>
+                <li><strong>Be Respectful:</strong> Remember to communicate respectfully and kindly with other members. Our community thrives on positive interactions.</li>
+            </ol>
+        </div>
+
+        <div class="learn-section profile-tips">
+            <h2>Tips for a Great Profile</h2>
+            <div class="tip-box">
+                <h4>Show, Don't Just Tell</h4>
+                <p>Instead of saying "I love to travel," mention a favorite trip or a place you dream of visiting.</p>
+            </div>
+            <div class="tip-box">
+                <h4>Choose Your Photos Wisely</h4>
+                <p>Use a variety of clear photos that show your face and personality. Include at least one recent headshot and some photos of you doing things you enjoy.</p>
+            </div>
+            <div class="tip-box">
+                <h4>Highlight Your Interests</h4>
+                <p>Be specific about your hobbies and passions. This gives others something to connect with and can lead to more meaningful conversations.</p>
+            </div>
+            <div class="tip-box">
+                <h4>Proofread Your Profile</h4>
+                <p>Typos and grammatical errors can be a turn-off. Take a moment to review and edit your profile text.</p>
+            </div>
+        </div>
+
+        <div class="learn-section communication-tips">
+            <h2>Tips for Successful Communication</h2>
+            <ul class="learn-list">
+                <li><strong>Personalize Your First Message:</strong> Instead of a generic "Hi," mention something specific you found interesting in their profile.</li>
+                <li><strong>Ask Open-Ended Questions:</strong> Encourage more detailed responses by asking questions that can't be answered with a simple "yes" or "no."</li>
+                <li><strong>Be Yourself:</strong> Authenticity is key to building genuine connections.</li>
+                <li><strong>Be Patient:</strong> Not everyone replies immediately. Give it some time.</li>
+                <li><strong>Know When to Move to an In-Person Meeting:</strong> If you feel a connection and have had some good conversations, suggest meeting in a safe, public place.</li>
+            </ul>
+        </div>
+
+        <div class="learn-section safety-on-dating-apps">
+            <h2>Staying Safe While Dating Online</h2>
+            <div class="safety-info">
+                <h3>Your Safety Matters</h3>
+                <p>We are committed to providing a safe environment for our users. Please be aware of the following safety tips:</p>
+                <ul class="learn-list">
+                    <li><strong>Protect Your Personal Information:</strong> Avoid sharing sensitive details like your home address, workplace, or financial information with someone you've just met online.</li>
+                    <li><strong>Meet in Public Places:</strong> When you decide to meet someone in person, choose a well-lit, public location for your first few dates.</li>
+                    <li><strong>Tell a Friend:</strong> Let a friend or family member know who you're meeting, where you're going, and when you expect to be back.</li>
+                    <li><strong>Trust Your Instincts:</strong> If something feels off or uncomfortable, end the interaction.</li>
+                    <li><strong>Report Suspicious Activity:</strong> If you encounter a profile or message that seems suspicious or violates our guidelines, please report it to us immediately.</li>
+                    <li><strong>Two-Way Matching:</strong> Remember that you only connect with people who have also expressed interest in you, providing a mutual foundation.</li>
+                </ul>
+                <p>For more detailed information, please visit our <a href="{{ url_for('safety') }}">Safety Guidelines</a> page.</p>
+            </div>
+        </div>
+    </div>
+
+    <footer class="text-center mt-5 py-4 bg-light">
+        <p class="mb-0">&copy; 2025 Dating App. All rights reserved.</p>
+        <small>
+            <a href="#">Privacy Policy</a> •
+            <a href="#">Terms of Service</a> •
+            <a href="{{ url_for('support') }}">Support</a>
+        </small>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

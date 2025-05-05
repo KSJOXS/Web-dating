@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Matches - Dating</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            background-color: #fff;
+            width: 250px;
+            padding: 20px;
+            box-shadow: 2px 0 8px rgba(0, 0, 0, 0.06);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            border-right: 1px solid #eee;
+        }
+
+        .sidebar-profile-picture-container {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            overflow: hidden;
+            margin-bottom: 15px;
+            border: 2px solid #007bff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #e9ecef;
+        }
+
+        .sidebar-profile-picture-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .sidebar-profile-picture-container::before {
+            content: "Profile Pic";
+            color: #6c757d;
+            font-size: 0.8em;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+        }
+
+        .sidebar-user-info {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .sidebar-user-info h2 {
+            margin-top: 0;
+            margin-bottom: 5px;
+            font-size: 1.2em;
+            color: #333;
+        }
+
+        .sidebar-user-info p {
+            color: #555;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+
+        .sidebar-navigation button {
+            display: block;
+            width: 100%;
+            padding: 10px 15px;
+            margin-bottom: 10px;
+            border: none;
+            background-color: #007bff;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            text-align: center;
+            font-size: 1em;
+            transition: background-color 0.3s ease;
+        }
+
+        .sidebar-navigation button:hover {
+            background-color: #0056b3;
+        }
+
+        .main-content {
+            flex-grow: 1;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            align-items: start;
+            margin-right: calc(350px + 20px); /* Space for right profile */
+        }
+
+        .match-card {
+            background-color: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+            padding: 20px;
+            text-align: center;
+            transition: transform 0.2s ease-in-out;
+            cursor: pointer; /* Indicate clickable */
+        }
+
+        .match-card:hover {
+            transform: scale(1.03);
+        }
+
+        .match-card-picture-container {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            overflow: hidden;
+            margin: 0 auto 15px;
+            border: 3px solid #ddd;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f0f0f0;
+        }
+
+        .match-card-picture-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .match-card-picture-container::before {
+            content: "Profile";
+            color: #777;
+            font-size: 0.8em;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+        }
+
+        .match-card h4 {
+            margin-top: 0;
+            margin-bottom: 8px;
+            font-size: 1.2em;
+            color: #333;
+            word-break: break-word;
+        }
+
+        .match-card p {
+            color: #555;
+            font-size: 0.9em;
+            margin-bottom: 12px;
+            word-break: break-word;
+        }
+
+        .match-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .match-actions button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background-color 0.3s ease;
+        }
+
+        .like-button {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .like-button:hover {
+            background-color: #c82333;
+        }
+
+        .friend-button {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .friend-button:hover {
+            background-color: #0056b3;
+        }
+
+        .message-button {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .message-button:hover {
+            background-color: #138496;
+        }
+
+        .matches-header {
+            padding: 10px 0;
+            margin-bottom: 20px;
+            text-align: left;
+            color: #555;
+            font-size: 1em;
+        }
+
+        .matches-header strong {
+            font-size: 1.4em;
+            color: #333;
+        }
+
+        .no-matches {
+            text-align: center;
+            padding: 20px;
+            font-size: 1.1em;
+            color: #777;
+        }
+
+        .profile-right {
+            background-color: #fff;
+            width: 350px;
+            padding: 20px;
+            box-shadow: -2px 0 8px rgba(0, 0, 0, 0.06);
+            border-left: 1px solid #eee;
+            overflow-y: auto;
+            position: absolute;
+            top: 0;
+            right: 0;
+            height: 100%;
+        }
+
+        .profile-right-picture-container {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            overflow: hidden;
+            margin: 0 auto 15px;
+            border: 3px solid #ddd;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f0f0f0;
+        }
+
+        .profile-right-picture-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .profile-right h2 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .profile-right p {
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .profile-right .interests-section {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .profile-right .interests-section h3 {
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .profile-right .interests-list {
+            list-style: none;
+            padding: 0;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .profile-right .interests-list li {
+            background-color: #e9ecef;
+            color: #555;
+            padding: 6px 10px;
+            border-radius: 5px;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-profile-picture-container">
+            {% if profile.profile_picture %}
+            <img src="{{ url_for('static', filename='uploads/' ~ profile.profile_picture) }}" alt="Your Profile Picture">
+            {% endif %}
+        </div>
+        <div class="sidebar-user-info">
+            <h2>{{ profile.first_name }}</h2>
+            {% if profile.gender %}
+            <p>Gender: {{ profile.gender }}</p>
+            {% endif %}
+        </div>
+        <div class="sidebar-navigation">
+            <button>Matches</button>
+            <button onclick="window.location.href='/chat'">Messages</button>
+            <button onclick="window.location.href='/profile'">Logout</button>
+           
+        </div>
+    </div>
+    <div class="main-content">
+        <div class="matches-header">
+            <strong>Matches</strong> Find people who share your interests!
+        </div>
+        {% if matches %}
+            {% for match in matches %}
+            <div class="match-card" onclick="showProfile('{{ match.id }}', '{{ match.name }}', '{{ match.gender }}', '{{ match.interests }}', '{{ url_for('static', filename='uploads/') }}{{ match.profile_picture if match.profile_picture else '' }}')">
+                <div class="match-card-picture-container">
+                    {% if match.profile_picture %}
+                    <img src="{{ url_for('static', filename='uploads/' ~ match.profile_picture) }}" alt="{{ match.name }}">
+                    {% endif %}
+                </div>
+                <h4>{{ match.name }}</h4>
+                {% if match.gender %}
+                <p>Gender: {{ match.gender }}</p>
+                {% endif %}
+                <div class="match-actions">
+                    <button class="like-button">Unlike ❌</button>
+                    
+                    
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p class="no-matches">No matches found yet.</p>
+        {% endif %}
+    </div>
+    <div class="profile-right" id="rightProfile">
+        <p style="text-align: center; color: #777;">Click on a match to view their profile here.</p>
+    </div>
+
+    <script>
+        function showProfile(id, name, gender, interests, profilePictureUrl) {
+            const profileDiv = document.getElementById('rightProfile');
+            let profileHTML = '';
+
+            if (profilePictureUrl) {
+                profileHTML += `<div class="profile-right-picture-container"><img src="${profilePictureUrl}" alt="${name}'s Profile"></div>`;
+            } else {
+                profileHTML += `<div class="profile-right-picture-container">Profile</div>`;
+            }
+
+            profileHTML += `<h2>${name}</h2>`;
+            if (gender) {
+                profileHTML += `<p><strong>Gender:</strong> ${gender}</p>`;
+            }
+
+            if (interests) {
+                const interestsArray = interests.split(',');
+                profileHTML += `<div class="interests-section"><h3>Interests</h3><ul class="interests-list">`;
+                interestsArray.forEach(interest => {
+                    profileHTML += `<li>${interest.trim()}</li>`;
+                });
+                profileHTML += `</ul></div>`;
+            } else {
+                profileHTML += `<p>No interests listed.</p>`;
+            }
+
+            profileDiv.innerHTML = profileHTML;
+        }
+    </script>
+</body>
+</html>
