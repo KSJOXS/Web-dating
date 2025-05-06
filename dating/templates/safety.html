@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Safety - Dating App</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .report-form {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+            margin-top: 20px;
+            margin-bottom: 30px;
+        }
+
+        .report-form label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        .report-form input[type="text"],
+        .report-form input[type="email"],
+        .report-form select,
+        .report-form textarea {
+            width: calc(100% - 12px);
+            padding: 8px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1em;
+        }
+
+        .report-form button.submit-report {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.3s ease;
+        }
+
+        .report-form button.submit-report:hover {
+            background-color: #c82333;
+        }
+
+        .safety-info-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+        }
+
+        .safety-info-section h3 {
+            color: #333;
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+
+        .safety-info-section ul {
+            padding-left: 20px;
+            margin-bottom: 15px;
+        }
+
+        .safety-info-section li {
+            margin-bottom: 8px;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm fixed-top">
+        <div class="container">
+            <a class="navbar-brand fw-bold fs-4 text-danger" href="{{ url_for('home') }}">🔥 Dating App</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse justify-content-center" id="navbarNav">
+                <ul class="navbar-nav gap-3">
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('explore') }}">Explore</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('learn') }}">Learn</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="{{ url_for('safety') }}">Safety</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('support') }}">Support</a></li>
+                </ul>
+            </div>
+            <div>
+                {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('profile') }}" class="btn btn-outline-dark rounded-pill me-2">Profile</a>
+                    <a href="{{ url_for('logout') }}" class="btn btn-danger rounded-pill">Log out</a>
+                {% else %}
+                    <a href="{{ url_for('login') }}" class="btn btn-outline-dark rounded-pill me-2">Log in</a>
+                    <a href="{{ url_for('register') }}" class="btn btn-danger rounded-pill">Sign up</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-5 pt-5">
+        <h1>Safety Guidelines</h1>
+        <p class="mb-4">Your safety is our top priority. Please review the following guidelines and use the form below to report any concerns or violations.</p>
+
+        <div class="safety-info-section">
+            <h3>Staying Safe While Dating Online</h3>
+            <ul>
+                <li><strong>Protect Your Personal Information:</strong> Avoid sharing sensitive details like your home address, workplace, or financial information with someone you've just met online.</li>
+                <li><strong>Meet in Public Places:</strong> When you decide to meet someone in person, choose a well-lit, public location for your first few dates.</li>
+                <li><strong>Tell a Friend:</strong> Let a friend or family member know who you're meeting, where you're going, and when you expect to be back.</li>
+                <li><strong>Trust Your Instincts:</strong> If something feels off or uncomfortable, end the interaction.</li>
+                <li><strong>Report Suspicious Activity:</strong> If you encounter a profile or message that seems suspicious or violates our guidelines, please report it to us immediately using the form below.</li>
+                <li><strong>Two-Way Matching:</strong> Remember that you only connect with people who have also expressed interest in you, providing a mutual foundation.</li>
+            </ul>
+        </div>
+
+        <div class="report-form">
+            <h2>Report a Safety Concern</h2>
+            <form id="reportSafetyForm" method="POST" action="{{ url_for('submit_report') }}">
+                <div class="mb-3">
+                    <label for="reporter_email">Your Email:</label>
+                    <input type="email" class="form-control" id="reporter_email" name="reporter_email" required>
+                </div>
+                <div class="mb-3">
+                    <label for="reported_user">Reported User (if applicable):</label>
+                    <input type="text" class="form-control" id="reported_user" name="reported_user" placeholder="Username or Profile Link">
+                </div>
+                <div class="mb-3">
+                    <label for="category">Category of Concern:</label>
+                    <select class="form-select" id="category" name="category" required>
+                        <option value="">Select a category</option>
+                        <option value="harassment">Harassment</option>
+                        <option value="scam_suspicion">Scam Suspicion</option>
+                        <option value="inappropriate_content">Inappropriate Content</option>
+                        <option value="underage_user">Underage User</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="description">Description of the Issue:</label>
+                    <textarea class="form-control" id="description" name="description" rows="5" required></textarea>
+                </div>
+                <button type="submit" class="btn btn-danger submit-report">Submit Report</button>
+            </form>
+        </div>
+    </div>
+
+    <footer class="text-center mt-5 py-4 bg-light fixed-bottom">
+        <p class="mb-0">&copy; 2025 Dating App. All rights reserved.</p>
+        <small>
+            <a href="#">Privacy Policy</a> •
+            <a href="#">Terms of Service</a> •
+            <a href="{{ url_for('support') }}">Support</a>
+        </small>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

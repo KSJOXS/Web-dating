@@ -2,5 +2,57 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <h1>Explore Page</h1>
+<div class="container mt-4">
+    <h1 class="text-center mb-4">Explore Profiles</h1>
+
+    <div class="row">
+        <!-- Profile 1 -->
+        <div class="col-md-3 mb-4">
+            <div class="card h-100">
+                <img src="https://randomuser.me/api/portraits/women/10.jpg" class="card-img-top" alt="Alice" style="height: 250px; object-fit: cover;">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Alice, 25</h5>
+                    <p class="card-text text-muted">New York</p>
+                    <p class="card-text">Coffee lover, bookworm, and always up for an adventure.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profile 2 -->
+        <div class="col-md-3 mb-4">
+            <div class="card h-100">
+                <img src="https://randomuser.me/api/portraits/men/20.jpg" class="card-img-top" alt="Liam" style="height: 250px; object-fit: cover;">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Liam, 28</h5>
+                    <p class="card-text text-muted">Los Angeles</p>
+                    <p class="card-text">Tech geek, surfer, and amateur guitarist.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profile 3 -->
+        <div class="col-md-3 mb-4">
+            <div class="card h-100">
+                <img src="https://randomuser.me/api/portraits/women/30.jpg" class="card-img-top" alt="Sophia" style="height: 250px; object-fit: cover;">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Sophia, 23</h5>
+                    <p class="card-text text-muted">Chicago</p>
+                    <p class="card-text">Dog mom, foodie, and a big fan of Netflix binges.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profile 4 -->
+        <div class="col-md-3 mb-4">
+            <div class="card h-100">
+                <img src="https://randomuser.me/api/portraits/men/40.jpg" class="card-img-top" alt="Noah" style="height: 250px; object-fit: cover;">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Noah, 30</h5>
+                    <p class="card-text text-muted">Austin</p>
+                    <p class="card-text">Fitness trainer who loves hiking and cooking.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

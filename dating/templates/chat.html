@@ -1,7 +1,4 @@
-<<<<<<< HEAD
-=======
 
->>>>>>> a895175acf332ece18893ab17618b06f53d3b2bf
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -288,68 +285,7 @@
         // passed from your Flask route.
     </script>
 </body>
-<<<<<<< HEAD
-</html>
-=======
+
 </html>
 
-{% extends "base.html" %}
-
-{% block content %}
-<div class="container mt-4">
-    <div class="row">
-        <!-- Cột bên trái: Danh sách đoạn chat -->
-        <div class="col-md-4 border-end">
-            <h4>Đoạn chat</h4>
-            <div class="mb-3">
-                <input type="text" class="form-control" placeholder="Tìm kiếm...">
-            </div>
-            <ul class="list-group">
-                {% for c in chats %}
-                <li class="list-group-item d-flex align-items-center {% if chat and c.id == chat.id %}active{% endif %}">
-                    <a href="{{ url_for('chat', chat_id=c.id) }}" class="d-flex align-items-center text-decoration-none text-dark">
-                        <img src="{{ c.user1.id == current_user.id and c.user2.avatar_url or c.user1.avatar_url or '/static/default-avatar.png' }}" alt="Avatar" class="rounded-circle me-3" style="width: 50px; height: 50px;">
-                        <div>
-                            <h6 class="mb-0">{{ c.user1_id == current_user.id and c.user2.username or c.user1.username }}</h6>
-                            <small class="text-muted">{{ c.messages[-1].content if c.messages else "No messages yet" }}</small>
-                        </div>
-                    </a>
-                </li>
-                {% endfor %}
-            </ul>
-        </div>
-
-        <!-- Khu vực bên phải: Nội dung chat -->
-        <div class="col-md-8">
-            <h4 class="mb-3">
-                {% if chat %}
-                    Chat with {{ chat.user1_id == current_user.id and chat.user2.username or chat.user1.username }}
-                {% else %}
-                    No chat selected.
-                {% endif %}
-            </h4>
-            <div class="chat-box mb-3" style="height: 400px; overflow-y: scroll; border: 1px solid #ccc; padding: 10px;">
-                {% for message in messages %}
-                <div class="mb-2">
-                    <strong>{{ message.sender.username }}:</strong>
-                    <span>{{ message.content }}</span>
-                    <small class="text-muted">{{ message.timestamp }}</small>
-                </div>
-                {% endfor %}
-            </div>
-            {% if chat %}
-                <form action="{{ url_for('send_message', chat_id=chat.id) }}" method="post">
-                    <div class="input-group">
-                        <input type="text" name="message" class="form-control" placeholder="Type a message...">
-                        <button type="submit" class="btn btn-primary">Send</button>
-                    </div>
-                </form>
-            {% else %}
-                <p class="text-muted">No chat selected. Please select a chat to start messaging.</p>
-            {% endif %}
-        </div>
-    </div>
-</div>
-{% endblock %}
-
->>>>>>> a895175acf332ece18893ab17618b06f53d3b2bf
+</html>

@@ -175,7 +175,7 @@ def create_profile():
         return redirect(url_for('profile'))
 
     return render_template('create_profile.html', form=form)
-<<<<<<< HEAD
+
 
 @app.route('/support')
 def support():
@@ -216,5 +216,27 @@ def matches():
         })
 
     return render_template('matches.html', profile=profile_data, matches=matches_data)
-=======
->>>>>>> a895175acf332ece18893ab17618b06f53d3b2bf
+
+@app.route('/safety')
+def safety():
+    return render_template('safety.html')
+
+@app.route('/submit_report', methods=['POST'])
+def submit_report():
+    if request.method == 'POST':
+        reporter_email = request.form['reporter_email']
+        reported_user = request.form['reported_user']
+        category = request.form['category']
+        description = request.form['description']
+
+        # Process the report data - e.g., save to a database, send an email to admins
+        print(f"Safety Report Received:")
+        print(f"Reporter Email: {reporter_email}")
+        print(f"Reported User: {reported_user}")
+        print(f"Category: {category}")
+        print(f"Description: {description}")
+
+        # Optionally, provide a feedback message to the user
+        return render_template('report_submitted.html') # You'll need to create this template
+    else:
+        return redirect(url_for('safety')) # Redirect if accessed with GET
