@@ -26,16 +26,17 @@
         }
 
         .sidebar-profile-picture-container {
-            width: 120px;
-            height: 120px;
+            width: 150px; /* Slightly larger size */
+            height: 150px; /* Slightly larger size */
             border-radius: 50%;
             overflow: hidden;
-            margin-bottom: 15px;
-            border: 2px solid #007bff;
+            margin-bottom: 20px; /* Slightly more margin */
+            border: 3px solid #ddd; /* More subtle border */
             display: flex;
             justify-content: center;
             align-items: center;
-            background-color: #e9ecef;
+            background-color: #f0f0f0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08); /* Add a subtle shadow */
         }
 
         .sidebar-profile-picture-container img {
@@ -45,14 +46,8 @@
         }
 
         .sidebar-profile-picture-container::before {
-            content: "Profile Pic";
-            color: #6c757d;
-            font-size: 0.8em;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            width: 100%;
-            height: 100%;
+            content: ""; /* Remove the "Profile Pic" text */
+            display: none; /* Hide the text */
         }
 
         .sidebar-user-info {
@@ -96,7 +91,7 @@
             flex-grow: 1;
             padding: 20px;
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 20px;
             align-items: start;
             margin-right: calc(350px + 20px); /* Space for right profile */
@@ -106,10 +101,13 @@
             background-color: #fff;
             border-radius: 12px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
-            padding: 20px;
+            padding: 15px;
             text-align: center;
             transition: transform 0.2s ease-in-out;
-            cursor: pointer; /* Indicate clickable */
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
 
         .match-card:hover {
@@ -117,12 +115,12 @@
         }
 
         .match-card-picture-container {
-            width: 100px;
-            height: 100px;
+            width: 120px;
+            height: 120px;
             border-radius: 50%;
             overflow: hidden;
-            margin: 0 auto 15px;
-            border: 3px solid #ddd;
+            margin-bottom: 10px;
+            border: 2px solid #ddd;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -133,12 +131,13 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
+            display: block;
         }
 
         .match-card-picture-container::before {
             content: "Profile";
             color: #777;
-            font-size: 0.8em;
+            font-size: 0.9em;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -148,31 +147,32 @@
 
         .match-card h4 {
             margin-top: 0;
-            margin-bottom: 8px;
-            font-size: 1.2em;
+            margin-bottom: 5px;
+            font-size: 1.1em;
             color: #333;
             word-break: break-word;
         }
 
         .match-card p {
             color: #555;
-            font-size: 0.9em;
-            margin-bottom: 12px;
+            font-size: 0.85em;
+            margin-bottom: 8px;
             word-break: break-word;
         }
 
         .match-actions {
             display: flex;
-            gap: 10px;
+            gap: 5px;
             justify-content: center;
+            margin-top: 10px;
         }
 
         .match-actions button {
-            padding: 10px 15px;
+            padding: 8px 12px;
             border: none;
             border-radius: 8px;
             cursor: pointer;
-            font-size: 0.9em;
+            font-size: 0.8em;
             transition: background-color 0.3s ease;
         }
 
@@ -185,41 +185,23 @@
             background-color: #c82333;
         }
 
-        .friend-button {
-            background-color: #007bff;
-            color: white;
-        }
-
-        .friend-button:hover {
-            background-color: #0056b3;
-        }
-
-        .message-button {
-            background-color: #17a2b8;
-            color: white;
-        }
-
-        .message-button:hover {
-            background-color: #138496;
-        }
-
         .matches-header {
             padding: 10px 0;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             text-align: left;
             color: #555;
             font-size: 1em;
         }
 
         .matches-header strong {
-            font-size: 1.4em;
+            font-size: 1.2em;
             color: #333;
         }
 
         .no-matches {
             text-align: center;
             padding: 20px;
-            font-size: 1.1em;
+            font-size: 1em;
             color: #777;
         }
 
@@ -237,8 +219,8 @@
         }
 
         .profile-right-picture-container {
-            width: 120px;
-            height: 120px;
+            width: 100px;
+            height: 100px;
             border-radius: 50%;
             overflow: hidden;
             margin: 0 auto 15px;
@@ -300,7 +282,7 @@
     <div class="sidebar">
         <div class="sidebar-profile-picture-container">
             {% if profile.profile_picture %}
-            <img src="{{ url_for('static', filename='uploads/' ~ profile.profile_picture) }}" alt="Your Profile Picture">
+            <img src="{{ url_for('static', filename='uploads/' ~ profile.profile_picture) }}" alt="Your Profile Picture" onerror="this.onerror=null; this.src='{{ url_for('static', filename='images/default_profile_sidebar.png') }}'">
             {% endif %}
         </div>
         <div class="sidebar-user-info">
@@ -310,10 +292,9 @@
             {% endif %}
         </div>
         <div class="sidebar-navigation">
-            <button>Matches</button>
+            <button onclick="window.location.href='/matches'">Matches</button>
             <button onclick="window.location.href='/chat'">Messages</button>
-            <button onclick="window.location.href='/profile'">Logout</button>
-           
+            <button onclick="window.location.href='/profile'">Back</button>
         </div>
     </div>
     <div class="main-content">
@@ -325,7 +306,7 @@
             <div class="match-card" onclick="showProfile('{{ match.id }}', '{{ match.name }}', '{{ match.gender }}', '{{ match.interests }}', '{{ url_for('static', filename='uploads/') }}{{ match.profile_picture if match.profile_picture else '' }}')">
                 <div class="match-card-picture-container">
                     {% if match.profile_picture %}
-                    <img src="{{ url_for('static', filename='uploads/' ~ match.profile_picture) }}" alt="{{ match.name }}">
+                    <img src="{{ url_for('static', filename='uploads/' ~ match.profile_picture) }}" alt="{{ match.name }}" onerror="this.onerror=null; this.src='{{ url_for('static', filename='images/default_profile.png') }}'">
                     {% endif %}
                 </div>
                 <h4>{{ match.name }}</h4>
@@ -333,9 +314,7 @@
                 <p>Gender: {{ match.gender }}</p>
                 {% endif %}
                 <div class="match-actions">
-                    <button class="like-button">Unlike ❌</button>
-                    
-                    
+                    <button class="like-button" data-match-id="{{ match.id }}" data-match-name="{{ match.name }}">Like ❤️</button>
                 </div>
             </div>
             {% endfor %}
@@ -353,7 +332,7 @@
             let profileHTML = '';
 
             if (profilePictureUrl) {
-                profileHTML += `<div class="profile-right-picture-container"><img src="${profilePictureUrl}" alt="${name}'s Profile"></div>`;
+                profileHTML += `<div class="profile-right-picture-container"><img src="${profilePictureUrl}" alt="${name}'s Profile" onerror="this.onerror=null; this.src='{{ url_for('static', filename='images/default_profile.png') }}'"></div>`;
             } else {
                 profileHTML += `<div class="profile-right-picture-container">Profile</div>`;
             }
@@ -376,6 +355,51 @@
 
             profileDiv.innerHTML = profileHTML;
         }
+
+const likeButtons = document.querySelectorAll('.like-button');
+likeButtons.forEach(button => {
+    button.addEventListener('click', function(e) {
+        e.preventDefault(); // Prevent any default behavior
+        const matchId = this.dataset.matchId;
+        const matchName = this.dataset.matchName;
+        
+        // Validate matchId
+        if (!matchId || isNaN(matchId)) {
+            console.error('Invalid matchId:', matchId);
+            alert('Invalid user selected.');
+            return;
+        }
+
+        console.log(`Liked user with ID: ${matchId}, Name: ${matchName}`);
+
+        fetch('/like_user', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ match_id: parseInt(matchId) }), // Ensure integer
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                alert(`You liked ${matchName}! They will now appear in your chat list if they like you back.`);
+                this.textContent = 'Liked ❤️';
+                this.disabled = true;
+            } else {
+                alert(data.message || 'Something went wrong while liking this user.');
+            }
+        })
+        .catch(error => {
+            console.error('Error liking user:', error);
+            alert('Something went wrong while liking this user.');
+        });
+    });
+});
     </script>
 </body>
 </html>

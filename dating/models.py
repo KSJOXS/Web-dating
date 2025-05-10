@@ -1,5 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
+from datetime import datetime
+from sqlalchemy import Enum as SQLAlchemyEnum 
 
 db = SQLAlchemy()
 
@@ -19,6 +21,10 @@ class User(db.Model, UserMixin):
     location = db.Column(db.String(100))
     interests = db.Column(db.Text)
 
+    likes_sent = db.relationship('Like', foreign_keys='Like.sender_id', back_populates='user_who_sent_like', lazy=True)
+    likes_received = db.relationship('Like', foreign_keys='Like.receiver_id', back_populates='user_who_received_like', lazy=True)
+    matches1 = db.relationship('Match', foreign_keys='Match.user1_id', backref='user1', lazy=True)
+    matches2 = db.relationship('Match', foreign_keys='Match.user2_id', backref='user2', lazy=True)
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
 
     # One-to-one relationship to Profile
@@ -26,6 +32,8 @@ class User(db.Model, UserMixin):
 
     def get_id(self):
         return str(self.user_id)  # Use 'user_id' here, not 'id'
+    
+
 
 
 class Profile(db.Model):
@@ -42,3 +50,43 @@ class Profile(db.Model):
     bio = db.Column(db.Text)
     profile_picture = db.Column(db.String(255), nullable=True)
     location = db.Column(db.String(255), nullable=True)
+    
+
+class Like(db.Model):
+    __tablename__ = 'likes'
+    like_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    sender_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
+    receiver_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
+    status = db.Column(SQLAlchemyEnum('Liked', 'Disliked', name='like_status_enum_final'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    user_who_sent_like = db.relationship('User', foreign_keys=[sender_id], back_populates='likes_sent')
+    user_who_received_like = db.relationship('User', foreign_keys=[receiver_id], back_populates='likes_received')
+
+
+
+class Match(db.Model):
+    __tablename__ = 'matches'
+    match_id = db.Column(db.Integer, primary_key=True)
+    user1_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
+    user2_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
+    match_status = db.Column(db.Enum('Matched', 'Unmatched'), nullable=False, default='Unmatched')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    lower_user_id = db.Column(db.Integer, nullable=False)
+    higher_user_id = db.Column(db.Integer, nullable=False)
+
+class Message(db.Model):
+    __tablename__ = 'messages'
+
+    message_id = db.Column(db.Integer, primary_key=True)
+    sender_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
+    receiver_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    timestamp = db.Column(db.DateTime, default=db.func.now())
+    seen = db.Column(db.Boolean, default=False)
+
+    sender = db.relationship('User', foreign_keys=[sender_id], backref='messages_sent')
+    receiver = db.relationship('User', foreign_keys=[receiver_id], backref='messages_received')
+
+    def __repr__(self):
+        return f"<Message from {self.sender_id} to {self.receiver_id} at {self.timestamp}>"

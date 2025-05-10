@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -203,7 +202,7 @@
             </div>
             <div class="sidebar-profile-info">
                 <h6>{{ current_user.first_name }}</h6>
-                </div>
+            </div>
         </div>
 
         <div class="sidebar-navigation">
@@ -214,23 +213,28 @@
 
         <h6 class="matches-list-header">Recent Matches</h6>
         <div id="matches-list">
-            {% if matches %}
-                {% for match in matches %}
-                <div class="match-item" onclick="loadChat('{{ match.id }}', '{{ match.name }}')">
-                    <div class="match-item-picture-container">
-                        {% if match.profile_picture %}
-                        <img src="{{ url_for('static', filename='uploads/' ~ match.profile_picture) }}" alt="{{ match.name }}">
-                        {% else %}
-                        <span>{{ match.name|first }}</span> {% endif %}
-                    </div>
-                    <div class="match-item-info">
-                        <h6>{{ match.name }}</h6>
-                        </div>
+<div id="matches-list">
+    {% if matches %}
+        {% for item in matches %}
+            <div class="match-item" onclick="loadChat('{{ item.user.user_id }}', '{{ item.user.first_name }}')">
+                <div class="match-item-picture-container">
+                    {% if item.user.profile_picture %}
+                        <img src="{{ url_for('static', filename='uploads/' ~ item.user.profile_picture) }}" alt="{{ item.user.first_name }}">
+                    {% else %}
+                        <span>{{ item.user.first_name[0] }}</span>
+                    {% endif %}
                 </div>
-                {% endfor %}
-            {% else %}
-                <p class="text-muted">No recent matches.</p>
-            {% endif %}
+                <div class="match-item-info">
+                    <h6>{{ item.user.first_name }}</h6>
+                    {# คุณสามารถเข้าถึงข้อมูล Match ได้จาก item.match เช่น: #}
+                    {# <p class="text-muted">Match ID: {{ item.match.match_id }}</p> #}
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p class="text-muted">No recent matches.</p>
+    {% endif %}
+</div>
         </div>
     </div>
 
@@ -245,21 +249,40 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <script>
+        const socket = io(); // Initialize SocketIO client
         const chatForm = document.querySelector('.chat-input-area');
         const messageInput = document.getElementById('chat-message-input');
         const chatDisplay = document.getElementById('chat-display');
-        const matchesListDiv = document.getElementById('matches-list'); // Renamed for clarity
+        const matchesListDiv = document.getElementById('matches-list');
         let currentChatUserId = null;
         let currentChatUserName = null;
+        const currentLoggedInUserId = {{ current_user.user_id }}; // Use current_user.user_id
 
         function loadChat(userId, userName) {
             console.log(`Loading chat with ${userName} (ID: ${userId})`);
             currentChatUserId = userId;
             currentChatUserName = userName;
             chatDisplay.innerHTML = `<p class="text-center text-muted">Loading chat with ${userName}...</p>`;
-            // Here you would make an AJAX request to fetch the chat messages for this userId
-            // and update the chatDisplay.
+
+            // Join the SocketIO room for this chat
+            const room = [currentLoggedInUserId, userId].sort().join('-');
+            socket.emit('join_chat', { user_id: currentLoggedInUserId, room: room });
+
+            // Fetch existing messages for this chat via AJAX (you'll need a Flask route for this)
+            fetch(`/get_messages/${userId}`)
+                .then(response => response.json())
+                .then(messages => {
+                    chatDisplay.innerHTML = '';
+                    messages.forEach(msg => {
+                        const messageDiv = document.createElement('div');
+                        messageDiv.classList.add('message-container', msg.sender_id === currentLoggedInUserId ? 'user-message' : 'other-message', 'mb-2', 'p-2', 'rounded');
+                        messageDiv.textContent = msg.message;
+                        chatDisplay.appendChild(messageDiv);
+                    });
+                    chatDisplay.scrollTop = chatDisplay.scrollHeight;
+                });
         }
 
         chatForm.addEventListener('submit', function(event) {
@@ -267,25 +290,38 @@
             const message = messageInput.value.trim();
             if (message && currentChatUserId) {
                 console.log(`Sending message to ${currentChatUserName} (ID: ${currentChatUserId}): ${message}`);
-                // Here you would make an AJAX request to send the message to the server
-                const newMessage = document.createElement('div');
-                newMessage.classList.add('message-container', 'user-message', 'mb-2', 'p-2', 'rounded');
-                newMessage.textContent = message;
-                chatDisplay.appendChild(newMessage);
-                chatDisplay.scrollTop = chatDisplay.scrollHeight;
-                messageInput.value = '';
+                socket.emit('send_message', {
+                    sender_id: currentLoggedInUserId,
+                    recipient_id: currentChatUserId,
+                    message: message
+                });
+                messageInput.value = ''; // Clear the input
             } else if (!currentChatUserId) {
                 alert('Please select a chat to send a message.');
             }
         });
 
-        // In a real application, you would fetch the list of matches dynamically
-        // from your backend and populate the 'matches' variable in your template.
-        // The 'matches' variable here is assumed to be a list of dictionaries
-        // passed from your Flask route.
+        // Listen for 'receive_message' events from the server
+        socket.on('receive_message', function(data) {
+            if (data.sender_id !== currentLoggedInUserId && (data.sender_id == currentChatUserId || data.sender_id == currentLoggedInUserId) && (currentChatUserId == data.sender_id || currentChatUserId == currentLoggedInUserId)) {
+                const newMessage = document.createElement('div');
+                newMessage.classList.add('message-container', 'other-message', 'mb-2', 'p-2', 'rounded');
+                newMessage.textContent = data.message;
+                chatDisplay.appendChild(newMessage);
+                chatDisplay.scrollTop = chatDisplay.scrollHeight;
+            }
+        });
+
+        // You might want to emit an event when a user connects to the chat page
+        socket.on('connect', function() {
+            console.log('Connected to WebSocket');
+        });
+
+        socket.on('disconnect', function() {
+            console.log('Disconnected from WebSocket');
+        });
+
+        
     </script>
 </body>
-
-</html>
-
 </html>
