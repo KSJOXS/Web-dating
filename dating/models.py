@@ -81,12 +81,14 @@ class Message(db.Model):
     message_id = db.Column(db.Integer, primary_key=True)
     sender_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
     receiver_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
-    content = db.Column(db.Text, nullable=False)
-    timestamp = db.Column(db.DateTime, default=db.func.now())
-    seen = db.Column(db.Boolean, default=False)
-
+    message_text = db.Column(db.Text, nullable=False) # ### แก้ไข: ต้องเป็น 'message_text'
+    sent_at = db.Column(db.DateTime, default=db.func.current_timestamp()) # ### แก้ไข: ต้องเป็น 'sent_at'
+    read_status = db.Column(db.Boolean, default=False) # ถ้ามีคอลัมน์นี้ใน DB ของคุณ (จาก Diagram คือ tinyint(1))
+    
     sender = db.relationship('User', foreign_keys=[sender_id], backref='messages_sent')
     receiver = db.relationship('User', foreign_keys=[receiver_id], backref='messages_received')
 
     def __repr__(self):
         return f"<Message from {self.sender_id} to {self.receiver_id} at {self.timestamp}>"
+    
+    

@@ -139,27 +139,43 @@
         }
 
         #chat-display {
+            flex-grow: 1; /* Allow chat display to take available space */
             overflow-y: auto;
             padding: 10px;
+            display: flex; /* ใช้ flexbox เพื่อจัดเรียงข้อความ */
+            flex-direction: column; /* จัดเรียงจากบนลงล่าง */
         }
 
-        .message-container {
+        /* Message styling */
+        .message-item {
+            display: flex;
+            flex-direction: column; /* ข้อความและ timestamp อยู่ในแนวตั้ง */
             padding: 8px 12px;
             margin-bottom: 8px;
             border-radius: 8px;
-            clear: both; /* Prevent floating issues */
+            max-width: 70%; /* Limit message width */
+            word-wrap: break-word; /* Break long words */
         }
 
-        .user-message {
-            background-color: #e2f7cb;
-            float: right;
-            text-align: right;
+        .my-message {
+            background-color: #e2f7cb; /* สีข้อความของฉัน */
+            align-self: flex-end; /* จัดชิดขวาใน flex container */
+            margin-left: auto; /* ดันไปขวา */
         }
 
         .other-message {
-            background-color: #fff;
-            float: left;
-            text-align: left;
+            background-color: #fff; /* สีข้อความของคนอื่น */
+            align-self: flex-start; /* จัดชิดซ้ายใน flex container */
+            margin-right: auto; /* ดันไปซ้าย */
+        }
+        .message-content {
+            font-size: 0.9em;
+            margin-bottom: 2px;
+        }
+        .message-timestamp {
+            font-size: 0.75em;
+            color: #888;
+            align-self: flex-end; /* จัด timestamp ชิดขวาเสมอ ไม่ว่าจะข้อความใคร */
         }
 
         .chat-input-area {
@@ -167,6 +183,7 @@
             padding: 10px;
             background-color: #e9ecef;
             border-top: 1px solid #ddd;
+            align-items: center; /* Vertically align items */
         }
 
         #chat-message-input {
@@ -198,7 +215,7 @@
                 {% if current_user.profile_picture %}
                 <img src="{{ url_for('static', filename='uploads/' ~ current_user.profile_picture) }}" alt="Your Profile">
                 {% else %}
-                <span>{{ current_user.first_name|first }}</span> {% endif %}
+                <span>{{ current_user.first_name[0] if current_user.first_name else '?' }}</span> {% endif %} {# Added condition for first_name #}
             </div>
             <div class="sidebar-profile-info">
                 <h6>{{ current_user.first_name }}</h6>
@@ -208,33 +225,34 @@
         <div class="sidebar-navigation">
             <button onclick="window.location.href='/profile'">Profile</button>
             <button class="active">Messages</button>
-            <button onclick="window.location.href='/matches'">Matches</button> <button onclick="window.location.href='/logout'">Logout</button>
+            <button onclick="window.location.href='/matches'">Matches</button>
+            <button onclick="window.location.href='/logout'">Logout</button>
         </div>
 
         <h6 class="matches-list-header">Recent Matches</h6>
+        
         <div id="matches-list">
-<div id="matches-list">
-    {% if matches %}
-        {% for item in matches %}
-            <div class="match-item" onclick="loadChat('{{ item.user.user_id }}', '{{ item.user.first_name }}')">
-                <div class="match-item-picture-container">
-                    {% if item.user.profile_picture %}
-                        <img src="{{ url_for('static', filename='uploads/' ~ item.user.profile_picture) }}" alt="{{ item.user.first_name }}">
-                    {% else %}
-                        <span>{{ item.user.first_name[0] }}</span>
-                    {% endif %}
+        {% if matches %}
+            {% for match_info in matches %} {# Renamed variable to avoid confusion #}
+                {# Add checks for existence of user and user_id/first_name within match_info.user #}
+                {% if match_info.user and match_info.user.user_id and match_info.user.first_name %}
+                <div class="match-item" onclick="loadChat('{{ match_info.user.user_id }}', '{{ match_info.user.first_name }}')">
+                    <div class="match-item-picture-container">
+                        {% if match_info.user.profile_picture %}
+                            <img src="{{ url_for('static', filename='uploads/' ~ match_info.user.profile_picture) }}" alt="{{ match_info.user.first_name }}">
+                        {% else %}
+                            <span>{{ match_info.user.first_name[0] }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="match-item-info">
+                        <h6>{{ match_info.user.first_name }}</h6>
+                    </div>
                 </div>
-                <div class="match-item-info">
-                    <h6>{{ item.user.first_name }}</h6>
-                    {# คุณสามารถเข้าถึงข้อมูล Match ได้จาก item.match เช่น: #}
-                    {# <p class="text-muted">Match ID: {{ item.match.match_id }}</p> #}
-                </div>
-            </div>
-        {% endfor %}
-    {% else %}
-        <p class="text-muted">No recent matches.</p>
-    {% endif %}
-</div>
+                {% endif %}
+            {% endfor %}
+        {% else %}
+            <p class="text-muted">No recent matches.</p>
+        {% endif %}
         </div>
     </div>
 
@@ -252,50 +270,98 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <script>
         const socket = io(); // Initialize SocketIO client
-        const chatForm = document.querySelector('.chat-input-area');
         const messageInput = document.getElementById('chat-message-input');
+        const sendButton = document.getElementById('chat-send-button'); // Get the send button
         const chatDisplay = document.getElementById('chat-display');
-        const matchesListDiv = document.getElementById('matches-list');
+        
         let currentChatUserId = null;
         let currentChatUserName = null;
-        const currentLoggedInUserId = {{ current_user.user_id }}; // Use current_user.user_id
+        const currentLoggedInUserId = {{ current_user.user_id | tojson }}; // Correctly pass current_user.user_id as JSON
+
+        function addMessageToDisplay(message, senderId, timestamp) {
+            const messageDiv = document.createElement('div');
+            // ใช้ class 'message-item' และ 'my-message'/'other-message'
+            const isMyMessage = (senderId == currentLoggedInUserId); 
+            messageDiv.classList.add('message-item');
+            if (isMyMessage) {
+                messageDiv.classList.add('my-message');
+            } else {
+                messageDiv.classList.add('other-message');
+            }
+
+            const date = new Date(timestamp);
+            // ปรับ format เวลาให้เป็น HH:MM
+            const timeString = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            messageDiv.innerHTML = `
+                <div class="message-content">${message}</div>
+                <div class="message-timestamp">${timeString}</div>
+            `;
+            chatDisplay.appendChild(messageDiv);
+            chatDisplay.scrollTop = chatDisplay.scrollHeight; // Scroll to bottom
+        }
 
         function loadChat(userId, userName) {
             console.log(`Loading chat with ${userName} (ID: ${userId})`);
+            
+            // ถ้ามีการเปลี่ยนห้องแชท ให้ส่ง leave_chat ออกไปก่อน
+            if (currentChatUserId && currentChatUserId !== userId) {
+                const oldRoom = [currentLoggedInUserId, parseInt(currentChatUserId)].sort().join('-');
+                socket.emit('leave_chat', { user_id: currentLoggedInUserId, room: oldRoom });
+                console.log(`Left old room: ${oldRoom}`);
+            }
+
             currentChatUserId = userId;
             currentChatUserName = userName;
             chatDisplay.innerHTML = `<p class="text-center text-muted">Loading chat with ${userName}...</p>`;
 
             // Join the SocketIO room for this chat
-            const room = [currentLoggedInUserId, userId].sort().join('-');
+            const room = [currentLoggedInUserId, parseInt(userId)].sort().join('-'); // Ensure userId is integer for sorting
             socket.emit('join_chat', { user_id: currentLoggedInUserId, room: room });
+            console.log(`Joined new room: ${room}`);
 
-            // Fetch existing messages for this chat via AJAX (you'll need a Flask route for this)
+            // Fetch existing messages for this chat via AJAX
             fetch(`/get_messages/${userId}`)
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
                 .then(messages => {
-                    chatDisplay.innerHTML = '';
-                    messages.forEach(msg => {
-                        const messageDiv = document.createElement('div');
-                        messageDiv.classList.add('message-container', msg.sender_id === currentLoggedInUserId ? 'user-message' : 'other-message', 'mb-2', 'p-2', 'rounded');
-                        messageDiv.textContent = msg.message;
-                        chatDisplay.appendChild(messageDiv);
-                    });
-                    chatDisplay.scrollTop = chatDisplay.scrollHeight;
+                    chatDisplay.innerHTML = ''; // Clear existing messages
+                    if (messages.length === 0) {
+                        chatDisplay.innerHTML = `<p class="text-center text-muted">No messages yet with ${userName}.</p>`;
+                    } else {
+                        messages.forEach(msg => {
+                            addMessageToDisplay(msg.message, msg.sender_id, msg.timestamp);
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching messages:', error);
+                    chatDisplay.innerHTML = `<p class="text-center text-danger">Error loading messages: ${error.message}</p>`;
                 });
         }
 
-        chatForm.addEventListener('submit', function(event) {
-            event.preventDefault();
+        // Event listener for sending messages
+        sendButton.addEventListener('click', function(event) {
+            event.preventDefault(); // Prevent default form submission behavior
             const message = messageInput.value.trim();
             if (message && currentChatUserId) {
-                console.log(`Sending message to ${currentChatUserName} (ID: ${currentChatUserId}): ${message}`);
+                console.log(`Attempting to send message to ${currentChatUserName} (ID: ${currentChatUserId}): ${message}`);
+                
+                // Emit message to server
                 socket.emit('send_message', {
                     sender_id: currentLoggedInUserId,
-                    recipient_id: currentChatUserId,
+                    recipient_id: parseInt(currentChatUserId),
                     message: message
                 });
-                messageInput.value = ''; // Clear the input
+
+                // Local Echo: Add message to display immediately
+                const now = new Date();
+                addMessageToDisplay(message, currentLoggedInUserId, now.toISOString());
+                messageInput.value = ''; // Clear input field
             } else if (!currentChatUserId) {
                 alert('Please select a chat to send a message.');
             }
@@ -303,16 +369,24 @@
 
         // Listen for 'receive_message' events from the server
         socket.on('receive_message', function(data) {
-            if (data.sender_id !== currentLoggedInUserId && (data.sender_id == currentChatUserId || data.sender_id == currentLoggedInUserId) && (currentChatUserId == data.sender_id || currentChatUserId == currentLoggedInUserId)) {
-                const newMessage = document.createElement('div');
-                newMessage.classList.add('message-container', 'other-message', 'mb-2', 'p-2', 'rounded');
-                newMessage.textContent = data.message;
-                chatDisplay.appendChild(newMessage);
-                chatDisplay.scrollTop = chatDisplay.scrollHeight;
+            console.log('Received message from server:', data);
+
+            // Only display messages that are NOT from the current user AND are for the currently open chat
+            // This prevents duplicate messages if local echo is used.
+            // Also ensures messages are displayed only if the correct chat is open.
+            if (data.sender_id != currentLoggedInUserId && 
+                (data.sender_id == currentChatUserId || data.recipient_id == currentChatUserId)) {
+                
+                addMessageToDisplay(data.message, data.sender_id, data.timestamp);
+            }
+            // If the message is from me, it means it's the server echoing my own message.
+            // We already displayed it with Local Echo, so no action needed here.
+            else if (data.sender_id == currentLoggedInUserId && data.recipient_id == currentChatUserId) {
+                console.log("My own message echoed by server, already displayed locally.");
             }
         });
 
-        // You might want to emit an event when a user connects to the chat page
+        // Socket.IO connection events
         socket.on('connect', function() {
             console.log('Connected to WebSocket');
         });
@@ -321,7 +395,11 @@
             console.log('Disconnected from WebSocket');
         });
 
-        
+        // Handle errors emitted from the server
+        socket.on('error', function(data) {
+            console.error('Socket Error:', data.message);
+            alert('Error: ' + data.message);
+        });
     </script>
 </body>
 </html>

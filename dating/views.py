@@ -49,66 +49,76 @@ def handle_send_message(data):
 
 @socketio.on('join_chat')
 def on_join(data):
-    user_id = data['user_id']
-    # หาคู่สนทนา (สมมติว่าคุณมีวิธีหาจาก URL หรือ Context)
-    # recipient_id = ...
-    recipient_id = data.get('recipient_id')  # Ensure recipient_id is passed in the data
-    if not recipient_id:
-        logger.error("recipient_id is missing in the data.")
-        return
-    room = '-'.join(sorted([str(user_id), str(recipient_id)]))
-    join_room(room)
-    print(f'User {user_id} joined room {room}')
+    user_id = data.get('user_id') # ### แก้ไข: ใช้ .get() เพื่อป้องกัน KeyError ถ้าไม่มี user_id
+    room_name = data.get('room') # 'room' is the sorted ID string from client
 
-@socketio.on('connect')
-def handle_connect():
-    user_id = current_user.user_id # หรือวิธีที่คุณระบุผู้ใช้
-    # อาจจะให้ผู้ใช้ Join Room ส่วนตัวด้วย ID ของตัวเอง
-    join_room(str(user_id))
-    print('Client connected')
+    if user_id and room_name:
+        join_room(room_name)
+        print(f"User {user_id} (SID: {request.sid}) joined room: {room_name}")
+    else:
+        logger.error(f"Invalid join_chat data: {data}") # ### เพิ่ม: logging เพื่อ debug ข้อมูลที่ไม่ถูกต้อง
+from flask_socketio import leave_room, rooms  # <-- Add leave_room import at the top of this block
+
+@socketio.on('leave_chat') # ### เพิ่ม: leave_chat handler
+def on_leave(data):
+    user_id = data.get('user_id')
+    room_name = data.get('room')
+    if user_id and room_name:
+        # ตรวจสอบว่า request.sid ยังอยู่ใน room นี้หรือไม่ ก่อนจะ leave
+        if request.sid in rooms(sid=request.sid, namespace='/') and room_name in rooms(sid=request.sid, namespace='/'):
+             leave_room(room_name)
+             print(f"User {user_id} (SID: {request.sid}) left room: {room_name}")
+        else:
+            print(f"User {user_id} (SID: {request.sid}) was not in room {room_name} to leave.")
 
 @socketio.on('disconnect')
 def handle_disconnect():
     print('Client disconnected')
-if __name__ == "__main__":
-    with app.app_context():
-        db.create_all()
-        if not User.query.first():
-            user1 = User(username='user1', email='user1@example.com', password_hash='hashedpassword', first_name='User1')
-            user2 = User(username='user2', email='user2@example.com', password_hash='hashedpassword', first_name='User2')
-            db.session.add_all([user1, user2])
-            db.session.commit()
-    socketio.run(app)
 
 @socketio.on('send_message')
 def handle_send_message(data):
     try:
-        sender_id = data['sender_id']
-        recipient_id = data['recipient_id']
-        message = data['message']
+        sender_id = data.get('sender_id')
+        recipient_id = data.get('recipient_id')
+        message_text = data.get('message') # ชื่อตัวแปรดีแล้ว ตรงกับ DB
 
+        if sender_id is None or recipient_id is None or message_text is None:
+            logger.error(f"Missing data for send_message: sender_id={sender_id}, recipient_id={recipient_id}, message={message_text}")
+            emit('error', {'message': 'Missing message data.'})
+            return
+
+        # --- เริ่มต้น logic การบันทึกข้อความลง DB ---
         new_message = Message(
             sender_id=sender_id,
-            receiver_id=recipient_id,
-            content=message
+            receiver_id=recipient_id, # CORRECT: ใช้ receiver_id ตาม DB Schema
+            message_text=message_text, # CORRECT: ใช้ message_text ตาม DB Schema
+            sent_at=datetime.utcnow() # เพิ่ม sent_at เพื่อบันทึกเวลา
         )
         db.session.add(new_message)
         db.session.commit()
+        # --- สิ้นสุด logic การบันทึกข้อความลง DB ---
 
-        # Create a room name based on sorted user IDs
-        room = [sender_id, recipient_id].sort().join('-')
+        room = '-'.join(sorted([str(sender_id), str(recipient_id)]))
+
         emit('receive_message', {
             'sender_id': sender_id,
-            'message': message,
-            'timestamp': datetime.utcnow().isoformat()
-        }, room=room, broadcast=True)
+            'recipient_id': recipient_id, # เก็บไว้ให้ JS client
+            'message': message_text,
+            'timestamp': datetime.utcnow().isoformat() # ส่ง timestamp กลับไปให้ client ด้วย
+        }, room=room)
+        print(f"Message from {sender_id} to {recipient_id} sent to room {room}: {message_text}")
+
     except SQLAlchemyError as e:
         db.session.rollback()
-        logger.error(f"SQLAlchemy Error: {str(e)}")
-        emit('error', {'message': 'Failed to send message.'})
+        logger.error(f"SQLAlchemy Error saving message: {str(e)}")
+        emit('error', {'message': 'Failed to send message due to database error.'})
     except Exception as e:
-        logger.error(f"Unexpected error: {str(e)}")
+        logger.error(f"Unexpected error in handle_send_message: {str(e)}")
         emit('error', {'message': 'An unexpected error occurred.'})
+
+
+
+
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
@@ -354,33 +364,31 @@ def submit_report():
 
    
 
-@app.route('/get_messages/<int:user_id>', methods=['GET'])
+# ใน app.py
+@app.route('/get_messages/<int:other_user_id>', methods=['GET'])
 @login_required
-def get_messages(user_id):
+def get_messages(other_user_id):
     try:
-        # Fetch messages between current_user and the specified user
         messages = Message.query.filter(
-            ((Message.sender_id == current_user.user_id) & (Message.receiver_id == user_id)) |
-            ((Message.sender_id == user_id) & (Message.receiver_id == current_user.user_id))
-        ).order_by(Message.timestamp.asc()).all()
+            ((Message.sender_id == current_user.user_id) & (Message.receiver_id == other_user_id)) | # ### แก้ไข: ใช้ Message.receiver_id
+            ((Message.sender_id == other_user_id) & (Message.receiver_id == current_user.user_id))  # ### แก้ไข: ใช้ Message.receiver_id
+        ).order_by(Message.sent_at.asc()).all() # ### แก้ไข: ใช้ Message.sent_at (เพื่อเรียงลำดับ)
 
-        # Convert to JSON-compatible format
         messages_data = [
             {
-                'message': msg.content,
+                'message': msg.message_text, # ### แก้ไข: ใช้ msg.message_text
                 'sender_id': msg.sender_id,
-                'timestamp': msg.timestamp.isoformat()
+                'timestamp': msg.sent_at.isoformat() # ### แก้ไข: ใช้ msg.sent_at (สำหรับ timestamp)
             }
             for msg in messages
         ]
         return jsonify(messages_data)
     except SQLAlchemyError as e:
-        logger.error(f"SQLAlchemy Error: {str(e)}")
+        logger.error(f"SQLAlchemy Error fetching messages: {str(e)}")
         return jsonify({"error": "Failed to fetch messages."}), 500
     except Exception as e:
-        logger.error(f"Unexpected error: {str(e)}")
+        logger.error(f"Unexpected error fetching messages: {str(e)}")
         return jsonify({"error": "An unexpected error occurred."}), 500
-
 
 @app.route('/like_user', methods=['POST'])
 @login_required
