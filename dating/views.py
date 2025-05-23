@@ -19,6 +19,8 @@ handler = logging.StreamHandler()
 handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
 logger.addHandler(handler)
 
+
+
 # Dictionary to keep track of users in chat rooms
 users_in_chat = {}
 users_in_chat = {}
@@ -32,20 +34,7 @@ def save_message(sender_id, recipient_id, message):
 socketio = SocketIO(app, cors_allowed_origins="*") 
 #socketio = SocketIO(app)
 
-@socketio.on('send_message')
-def handle_send_message(data):
-    sender_id = data['sender_id']
-    recipient_id = data['recipient_id']
-    message = data['message']
 
-    # บันทึกข้อความลงในฐานข้อมูล (ตามที่คุณทำอยู่แล้ว)
-    save_message(sender_id, recipient_id, message)
-
-    # สร้างชื่อ Room (เรียง ID ผู้ใช้แล้วเชื่อมด้วย '-')
-    room = '-'.join(sorted([str(sender_id), str(recipient_id)]))
-
-    # ส่งข้อความไปยัง Room ที่เกี่ยวข้อง (รวมทั้งผู้ส่ง)
-    emit('receive_message', {'sender_id': sender_id, 'message': message}, room=room)
 
 @socketio.on('join_chat')
 def on_join(data):
@@ -76,46 +65,42 @@ def handle_disconnect():
     print('Client disconnected')
 
 @socketio.on('send_message')
+@login_required
 def handle_send_message(data):
+    sender_id = data['sender_id']
+    recipient_id = data['recipient_id']
+    message_text = data['message']
+
+    if sender_id != current_user.user_id:
+        emit('error', {'message': 'Unauthorized sender.'}, room=request.sid)
+        return
+
     try:
-        sender_id = data.get('sender_id')
-        recipient_id = data.get('recipient_id')
-        message_text = data.get('message') # ชื่อตัวแปรดีแล้ว ตรงกับ DB
-
-        if sender_id is None or recipient_id is None or message_text is None:
-            logger.error(f"Missing data for send_message: sender_id={sender_id}, recipient_id={recipient_id}, message={message_text}")
-            emit('error', {'message': 'Missing message data.'})
-            return
-
-        # --- เริ่มต้น logic การบันทึกข้อความลง DB ---
         new_message = Message(
             sender_id=sender_id,
-            receiver_id=recipient_id, # CORRECT: ใช้ receiver_id ตาม DB Schema
-            message_text=message_text, # CORRECT: ใช้ message_text ตาม DB Schema
-            sent_at=datetime.utcnow() # เพิ่ม sent_at เพื่อบันทึกเวลา
+            receiver_id=recipient_id,
+            message_text=message_text
         )
         db.session.add(new_message)
         db.session.commit()
-        # --- สิ้นสุด logic การบันทึกข้อความลง DB ---
 
+        # Determine the chat room (sorted user IDs for consistency)
         room = '-'.join(sorted([str(sender_id), str(recipient_id)]))
 
+        # Emit the message to the room
         emit('receive_message', {
-            'sender_id': sender_id,
-            'recipient_id': recipient_id, # เก็บไว้ให้ JS client
-            'message': message_text,
-            'timestamp': datetime.utcnow().isoformat() # ส่ง timestamp กลับไปให้ client ด้วย
+            'message_id': new_message.message_id, # +++ IMPORTANT: Include the new message ID +++
+            'message': new_message.message_text,
+            'sender_id': new_message.sender_id,
+            'timestamp': new_message.sent_at.isoformat(),
+            'recipient_id': new_message.receiver_id # +++ Also useful for filtering on frontend +++
         }, room=room)
-        print(f"Message from {sender_id} to {recipient_id} sent to room {room}: {message_text}")
+        logger.info(f"Message sent by {sender_id} to {recipient_id} in room {room}")
 
-    except SQLAlchemyError as e:
-        db.session.rollback()
-        logger.error(f"SQLAlchemy Error saving message: {str(e)}")
-        emit('error', {'message': 'Failed to send message due to database error.'})
     except Exception as e:
-        logger.error(f"Unexpected error in handle_send_message: {str(e)}")
-        emit('error', {'message': 'An unexpected error occurred.'})
-
+        db.session.rollback()
+        logger.error(f"Error sending message: {e}")
+        emit('error', {'message': 'Failed to send message.'}, room=request.sid)
 
 
 
@@ -197,52 +182,7 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-"""
-@app.route('/create_profile', methods=['GET', 'POST'])
-@login_required
-def create_profile():
-    form = ProfileForm()
 
-    if form.validate_on_submit():
-        # Process profile picture upload
-        profile_picture_filename = None
-        if form.profile_picture.data:
-            file = form.profile_picture.data
-            if file and allowed_file(file.filename):
-                filename = secure_filename(file.filename)
-                file.save(os.path.join(UPLOAD_FOLDER, filename))
-                profile_picture_filename = os.path.join(UPLOAD_FOLDER, filename)
-
-        # Update or create the profile
-        if current_user.profile:
-            # Update existing profile
-            current_user.profile.first_name = form.first_name.data 
-            current_user.profile.gender = form.gender.data
-            current_user.profile.date_of_birth = form.date_of_birth.data
-            current_user.profile.bio = form.bio.data
-            current_user.profile.profile_picture = profile_picture_filename
-            current_user.profile.location = form.location.data
-            current_user.profile.interests = form.interests.data
-        else:
-            # Create a new profile
-            profile = Profile(
-                user_id=current_user.user_id,
-                name=form.first_name.data,              
-                gender=form.gender.data,
-                date_of_birth=form.date_of_birth.data,
-                bio=form.bio.data,
-                profile_picture=profile_picture_filename,
-                location=form.location.data,
-                interests=form.interests.data
-            )
-            db.session.add(profile)
-
-        db.session.commit()
-        flash('Profile saved successfully!', 'success')
-        return redirect(url_for('profile'))  # Redirect to the profile view
-
-    return render_template('create_profile.html', form=form)
-"""
 
 @app.route('/create_profile', methods=['GET', 'POST'])
 @login_required
@@ -337,6 +277,55 @@ def matches():
         for user in users
     ]
     return render_template('matches.html', matches=matches_data, profile=current_user)
+
+@app.route('/unmatch', methods=['POST'])
+@login_required
+def unmatch_user():
+    data = request.get_json()
+    other_user_id = data.get('other_user_id')
+
+    if not other_user_id:
+        return jsonify({'success': False, 'error': 'Other user ID is required.'}), 400
+
+    try:
+        # Find the match entry
+        user1_id, user2_id = sorted([current_user.user_id, other_user_id])
+        match = Match.query.filter(
+            (Match.user1_id == user1_id) & (Match.user2_id == user2_id)
+        ).first()
+
+        if not match:
+            return jsonify({'success': False, 'error': 'Match not found.'}), 404
+
+        # Delete related messages
+        Message.query.filter(
+            or_(
+                and_(Message.sender_id == current_user.user_id, Message.receiver_id == other_user_id),
+                and_(Message.sender_id == other_user_id, Message.receiver_id == current_user.user_id)
+            )
+        ).delete(synchronize_session=False)
+        db.session.commit()
+
+        # Delete the match itself
+        db.session.delete(match)
+        db.session.commit()
+
+        # Also update the 'Like' entries to 'Disliked' or delete them for consistency
+        # Assuming unmatching means you no longer 'Like' them
+        Like.query.filter(
+            or_(
+                and_(Like.sender_id == current_user.user_id, Like.receiver_id == other_user_id),
+                and_(Like.sender_id == other_user_id, Like.receiver_id == current_user.user_id)
+            )
+        ).update({"status": "Disliked"}, synchronize_session=False) # Change status to Disliked
+        db.session.commit()
+
+        return jsonify({'success': True, 'message': 'Unmatched successfully.'}), 200
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error unmatching: {e}")
+        return jsonify({'success': False, 'error': 'An internal error occurred.'}), 500
     
 @app.route('/safety')
 def safety():
@@ -364,89 +353,209 @@ def submit_report():
 
    
 
-# ใน app.py
+
 @app.route('/get_messages/<int:other_user_id>', methods=['GET'])
 @login_required
 def get_messages(other_user_id):
     try:
         messages = Message.query.filter(
-            ((Message.sender_id == current_user.user_id) & (Message.receiver_id == other_user_id)) | # ### แก้ไข: ใช้ Message.receiver_id
-            ((Message.sender_id == other_user_id) & (Message.receiver_id == current_user.user_id))  # ### แก้ไข: ใช้ Message.receiver_id
-        ).order_by(Message.sent_at.asc()).all() # ### แก้ไข: ใช้ Message.sent_at (เพื่อเรียงลำดับ)
+            or_(
+                (Message.sender_id == current_user.user_id) & (Message.receiver_id == other_user_id),
+                (Message.sender_id == other_user_id) & (Message.receiver_id == current_user.user_id)
+            )
+        ).order_by(Message.sent_at.asc()).all()
 
         messages_data = [
             {
-                'message': msg.message_text, # ### แก้ไข: ใช้ msg.message_text
+                'message_id': msg.message_id, # +++ ADDED THIS LINE +++
+                'message': msg.message_text,
                 'sender_id': msg.sender_id,
-                'timestamp': msg.sent_at.isoformat() # ### แก้ไข: ใช้ msg.sent_at (สำหรับ timestamp)
+                'timestamp': msg.sent_at.isoformat()
             }
             for msg in messages
         ]
         return jsonify(messages_data)
-    except SQLAlchemyError as e:
-        logger.error(f"SQLAlchemy Error fetching messages: {str(e)}")
-        return jsonify({"error": "Failed to fetch messages."}), 500
     except Exception as e:
-        logger.error(f"Unexpected error fetching messages: {str(e)}")
-        return jsonify({"error": "An unexpected error occurred."}), 500
+        logger.error(f"Error fetching messages for user {current_user.user_id} with {other_user_id}: {e}")
+        return jsonify({"error": "Failed to fetch messages."}), 500
+    
+@app.route('/edit_message', methods=['POST'])
+@login_required
+def edit_message():
+    data = request.get_json()
+    message_id = data.get('message_id')
+    new_message_text = data.get('new_message_text')
+
+    if not message_id or not new_message_text:
+        return jsonify({'success': False, 'message': 'Missing message ID or new message text.'}), 400
+
+    try:
+        message = Message.query.get(message_id)
+
+        if not message:
+            return jsonify({'success': False, 'message': 'Message not found.'}), 404
+
+        # Crucial security check: Ensure the current user is the sender of the message
+        if message.sender_id != current_user.user_id:
+            return jsonify({'success': False, 'message': 'You are not authorized to edit this message.'}), 403
+
+        # Update the message text
+        message.message_text = new_message_text.strip() # Remove leading/trailing whitespace
+        db.session.commit()
+
+        # Emit SocketIO event to update message for both sender and receiver
+        # Determine the room name (sorted user IDs for consistency)
+        room = '-'.join(sorted([str(message.sender_id), str(message.receiver_id)]))
+        
+        socketio.emit('message_edited', {
+            'message_id': message.message_id,
+            'new_message': message.message_text,
+            'edited_at': datetime.utcnow().isoformat()
+        }, room=room)
+
+        return jsonify({'success': True, 'message': 'Message updated successfully.'})
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error editing message {message_id} by user {current_user.user_id}: {e}")
+        return jsonify({'success': False, 'message': 'An unexpected error occurred while editing message.'}), 500
+    
+@app.route('/delete_message', methods=['POST'])
+@login_required
+def delete_message():
+    data = request.get_json()
+    message_id = data.get('message_id')
+
+    if not message_id:
+        return jsonify({'success': False, 'message': 'Missing message ID.'}), 400
+
+    try:
+        message = Message.query.get(message_id)
+
+        if not message:
+            return jsonify({'success': False, 'message': 'Message not found.'}), 404
+
+        # Crucial security check: Ensure the current user is the sender of the message
+        if message.sender_id != current_user.user_id:
+            return jsonify({'success': False, 'message': 'You are not authorized to delete this message.'}), 403
+
+        # Store receiver_id before deleting the message object
+        receiver_id = message.receiver_id
+        sender_id = message.sender_id
+
+        db.session.delete(message)
+        db.session.commit()
+
+        # Emit SocketIO event to remove message for both sender and receiver
+        # Determine the room name (sorted user IDs for consistency)
+        room = '-'.join(sorted([str(sender_id), str(receiver_id)]))
+        
+        socketio.emit('message_deleted', {
+            'message_id': message_id # Send the ID of the message that was deleted
+        }, room=room)
+
+        return jsonify({'success': True, 'message': 'Message deleted successfully.'})
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error deleting message {message_id} by user {current_user.user_id}: {e}")
+        return jsonify({'success': False, 'message': 'An unexpected error occurred while deleting message.'}), 500
+
+
+@app.route('/upload_chat_image', methods=['POST'])
+@login_required
+def upload_chat_image():
+    if 'image' not in request.files:
+        return jsonify({'success': False, 'message': 'No image file part'}), 400
+    
+    file = request.files['image']
+    
+    if file.filename == '':
+        return jsonify({'success': False, 'message': 'No selected image file'}), 400
+    
+    if file and allowed_file(file.filename):
+        # Generate a unique filename to prevent conflicts
+        filename = secure_filename(f"{current_user.username}_{datetime.now().strftime('%Y%m%d%H%M%S%f')}_{file.filename}")
+        filepath = os.path.join(app.config['CHAT_UPLOAD_FOLDER'], filename)
+        try:
+            file.save(filepath)
+            return jsonify({'success': True, 'filename': filename}), 200
+        except Exception as e:
+            logger.error(f"Error saving chat image: {e}")
+            return jsonify({'success': False, 'message': 'Failed to save image file.'}), 500
+    else:
+        return jsonify({'success': False, 'message': 'Invalid file type. Only images (png, jpg, jpeg, gif) are allowed.'}), 400
+
 
 @app.route('/like_user', methods=['POST'])
 @login_required
 def like_user():
     data = request.get_json()
-    liked_user_id = data.get('match_id')  # เปลี่ยนชื่อตัวแปรให้สื่อความหมาย
+    liked_user_id = data.get('match_id')
 
-    if not liked_user_id:
-        return jsonify({'success': False, 'message': 'Missing user ID to like.'}), 400
+    # ... (error checks)
 
     try:
         liked_user = User.query.get(liked_user_id)
         if not liked_user:
             return jsonify({'success': False, 'message': 'Invalid user to like.'}), 400
 
-        # ตรวจสอบว่าผู้ใช้ปัจจุบันยังไม่ได้กดไลค์ผู้ใช้คนนี้
         existing_like = Like.query.filter_by(
             sender_id=current_user.user_id,
             receiver_id=liked_user.user_id
         ).first()
 
-        if not existing_like:
+        if existing_like:
+            if existing_like.status == 'Disliked':
+                # If you previously disliked them, change it to Liked
+                existing_like.status = 'Liked'
+                db.session.commit()
+                message_text = f'You re-liked {liked_user.first_name or liked_user.username}!'
+            else: # Already Liked
+                return jsonify({'success': True, 'message': 'You have already liked this user.'})
+        else:
+            # No existing like, create a new one
             new_like = Like(sender_id=current_user.user_id, receiver_id=liked_user.user_id, status='Liked')
             db.session.add(new_like)
             db.session.commit()
+            message_text = f'You liked {liked_user.first_name or liked_user.username}!'
 
-            # ตรวจสอบว่าผู้ใช้ที่ถูกไลค์ ได้ไลค์กลับมาหรือไม่
-            reverse_like = Like.query.filter_by(
-                sender_id=liked_user.user_id,
-                receiver_id=current_user.user_id
+        # Now, check for a reverse like (whether it was existing or just created)
+        reverse_like = Like.query.filter_by(
+            sender_id=liked_user.user_id,
+            receiver_id=current_user.user_id,
+            status='Liked'
+        ).first()
+
+        if reverse_like:
+            user1_id, user2_id = sorted([current_user.user_id, liked_user.user_id])
+            existing_match = Match.query.filter(
+                (Match.user1_id == user1_id) & (Match.user2_id == user2_id)
             ).first()
-
-            if reverse_like and reverse_like.status == 'Liked':
-                # สร้าง Match record ถ้ามีการไลค์สวนกลับ
-                existing_match = Match.query.filter(
-                    ((Match.user1_id == current_user.user_id) & (Match.user2_id == liked_user.user_id)) |
-                    ((Match.user1_id == liked_user.user_id) & (Match.user2_id == current_user.user_id))
-                ).first()
-                if not existing_match:
-                    new_match = Match(
-                        user1_id=min(current_user.user_id, liked_user.user_id),
-                        user2_id=max(current_user.user_id, liked_user.user_id),
-                        match_status='Matched',
-                        created_at=datetime.utcnow()
-                    )
-                    db.session.add(new_match)
-                    db.session.commit()
-                    return jsonify({'success': True, 'message': f'You matched with {liked_user.first_name}!'})
-                else:
-                    return jsonify({'success': True, 'message': f'You liked {liked_user.first_name}!'})
+            
+            if not existing_match:
+                new_match = Match(
+                    user1_id=user1_id,
+                    user2_id=user2_id,
+                    match_status='Matched',
+                    created_at=datetime.utcnow(),
+                    lower_user_id=user1_id,
+                    higher_user_id=user2_id
+                )
+                db.session.add(new_match)
+                db.session.commit()
+                return jsonify({'success': True, 'message': f'It\'s a match with {liked_user.first_name or liked_user.username}!'})
             else:
-                return jsonify({'success': True, 'message': f'You liked {liked_user.first_name}!'})
+                if existing_match.match_status != 'Matched':
+                    existing_match.match_status = 'Matched'
+                    db.session.commit()
+                return jsonify({'success': True, 'message': f'{message_text} (Match re-established!)'})
         else:
-            return jsonify({'success': False, 'message': 'You have already liked this user.'})
+            return jsonify({'success': True, 'message': message_text})
 
     except Exception as e:
         db.session.rollback()
-        print(f"Error liking user: {e}")
+        logger.error(f"Error liking user: {e}")
         return jsonify({'success': False, 'message': 'Something went wrong while liking this user.'}), 500
 
 @app.route('/unlike_user', methods=['POST'])

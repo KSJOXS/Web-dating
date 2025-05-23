@@ -1,0 +1,8 @@
+Flask
+Flask-SQLAlchemy
+Flask-Login
+PyMySQL
+Flask-WTF
+Flask-SocketIO
+email_validator
+# เพิ่ม libraries อื่นๆ ถ้ามี

@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <style>
         body {
+            font-family: 'Arial', sans-serif;
             background-color: #f8f9fa;
             margin: 0;
             padding: 0;
@@ -94,6 +95,7 @@
             border-bottom: 1px solid #f8f9fa;
             cursor: pointer;
             transition: background-color 0.2s ease-in-out;
+            position: relative;
         }
 
         .match-item:last-child {
@@ -123,11 +125,55 @@
             object-fit: cover;
         }
 
+        .match-item-info {
+            flex-grow: 1;
+        }
         .match-item-info h6 {
             margin-bottom: 0;
             font-size: 0.9em;
             color: #333;
         }
+
+        .delete-button-container {
+            margin-left: auto;
+            padding-left: 10px;
+        }
+
+        .delete-match-button {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            font-size: 1.1em;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            opacity: 0.7;
+            transition: opacity 0.2s ease-in-out, background-color 0.2s ease-in-out;
+            line-height: 1;
+            padding: 0;
+            flex-shrink: 0;
+        }
+
+        .delete-match-button:hover {
+            opacity: 1;
+            background-color: #c82333;
+        }
+
+        .delete-match-button:active,
+        .delete-match-button:focus {
+            outline: none;
+            box-shadow: none;
+        }
+
+        .delete-match-button {
+            z-index: 10;
+            position: relative;
+        }
+
 
         .chat-area {
             flex-grow: 1;
@@ -139,51 +185,96 @@
         }
 
         #chat-display {
-            flex-grow: 1; /* Allow chat display to take available space */
+            flex-grow: 1;
             overflow-y: auto;
             padding: 10px;
-            display: flex; /* ใช้ flexbox เพื่อจัดเรียงข้อความ */
-            flex-direction: column; /* จัดเรียงจากบนลงล่าง */
+            display: flex;
+            flex-direction: column;
         }
 
         /* Message styling */
         .message-item {
             display: flex;
-            flex-direction: column; /* ข้อความและ timestamp อยู่ในแนวตั้ง */
+            flex-direction: column; /* Changed to column for content, then row for footer */
             padding: 8px 12px;
             margin-bottom: 8px;
             border-radius: 8px;
-            max-width: 70%; /* Limit message width */
-            word-wrap: break-word; /* Break long words */
+            max-width: 70%;
+            word-wrap: break-word;
+            position: relative;
         }
 
         .my-message {
-            background-color: #e2f7cb; /* สีข้อความของฉัน */
-            align-self: flex-end; /* จัดชิดขวาใน flex container */
-            margin-left: auto; /* ดันไปขวา */
+            background-color: #e2f7cb;
+            align-self: flex-end;
+            margin-left: auto;
+            /* No change here, still aligns the entire message box to the right */
         }
 
         .other-message {
-            background-color: #fff; /* สีข้อความของคนอื่น */
-            align-self: flex-start; /* จัดชิดซ้ายใน flex container */
-            margin-right: auto; /* ดันไปซ้าย */
+            background-color: #fff;
+            align-self: flex-start;
+            margin-right: auto;
         }
         .message-content {
             font-size: 0.9em;
             margin-bottom: 2px;
         }
+
+        /* NEW CSS for delete button inside message and footer layout */
+        .message-footer {
+            display: flex;
+            justify-content: flex-end; /* Align timestamp and delete button to the right */
+            align-items: center;
+            width: 100%; /* Ensure footer takes full width of message-item */
+            gap: 5px; /* Space between timestamp and delete button */
+            margin-top: 2px;
+        }
+
         .message-timestamp {
             font-size: 0.75em;
             color: #888;
-            align-self: flex-end; /* จัด timestamp ชิดขวาเสมอ ไม่ว่าจะข้อความใคร */
+            align-self: unset; /* Override previous align-self: flex-end from parent .message-item */
+            flex-shrink: 0; /* Prevent it from shrinking */
         }
+
+        .message-delete-button {
+            background: none;
+            border: none;
+            color: #dc3545; /* Red color for delete */
+            font-size: 1.2em;
+            cursor: pointer;
+            padding: 0 5px;
+            opacity: 0.7;
+            transition: opacity 0.2s ease;
+            line-height: 1; /* For better icon centering */
+            display: none; /* Hidden by default */
+            flex-shrink: 0; /* Prevent it from shrinking */
+        }
+
+        /* Show delete button on hover of the message */
+        .my-message:hover .message-delete-button {
+            display: block;
+        }
+
+        .message-delete-button:hover {
+            opacity: 1;
+            color: #c82333;
+        }
+
+        /* Hide timestamp and delete button when editing */
+        .message-item.editing .message-footer {
+            display: none;
+        }
+
+        /* END NEW CSS for delete button inside message and footer layout */
 
         .chat-input-area {
             display: flex;
             padding: 10px;
             background-color: #e9ecef;
             border-top: 1px solid #ddd;
-            align-items: center; /* Vertically align items */
+            align-items: center;
         }
 
         #chat-message-input {
@@ -206,6 +297,63 @@
         #chat-send-button:hover {
             background-color: #0056b3;
         }
+
+        /* NEW CSS for editing messages */
+        .message-item.editing .message-content {
+            display: none;
+        }
+        .message-edit-area {
+            display: none;
+            width: 100%;
+            margin-top: 5px;
+        }
+        .message-item.editing .message-edit-area {
+            display: block;
+        }
+        .message-edit-area textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            resize: vertical;
+            min-height: 50px;
+        }
+        .message-edit-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 5px;
+            margin-top: 5px;
+        }
+        .message-edit-actions button {
+            padding: 5px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+        }
+        .message-edit-actions .save-btn {
+            background-color: #28a745;
+            color: white;
+        }
+        .message-edit-actions .save-btn:hover {
+            background-color: #218838;
+        }
+        .message-edit-actions .cancel-btn {
+            background-color: #6c757d;
+            color: white;
+        }
+        .message-edit-actions .cancel-btn:hover {
+            background-color: #5a6268;
+        }
+        .message-edited-label {
+            font-size: 0.7em;
+            color: #999;
+            margin-top: 2px;
+            align-self: flex-end;
+            font-style: italic;
+        }
+        /* END NEW CSS for editing messages */
+
     </style>
 </head>
 <body>
@@ -215,7 +363,7 @@
                 {% if current_user.profile_picture %}
                 <img src="{{ url_for('static', filename='uploads/' ~ current_user.profile_picture) }}" alt="Your Profile">
                 {% else %}
-                <span>{{ current_user.first_name[0] if current_user.first_name else '?' }}</span> {% endif %} {# Added condition for first_name #}
+                <span>{{ current_user.first_name[0] if current_user.first_name else '?' }}</span> {% endif %}
             </div>
             <div class="sidebar-profile-info">
                 <h6>{{ current_user.first_name }}</h6>
@@ -233,10 +381,9 @@
         
         <div id="matches-list">
         {% if matches %}
-            {% for match_info in matches %} {# Renamed variable to avoid confusion #}
-                {# Add checks for existence of user and user_id/first_name within match_info.user #}
+            {% for match_info in matches %}
                 {% if match_info.user and match_info.user.user_id and match_info.user.first_name %}
-                <div class="match-item" onclick="loadChat('{{ match_info.user.user_id }}', '{{ match_info.user.first_name }}')">
+                <div class="match-item" data-user-id="{{ match_info.user.user_id }}" onclick="loadChat('{{ match_info.user.user_id }}', '{{ match_info.user.first_name }}')">
                     <div class="match-item-picture-container">
                         {% if match_info.user.profile_picture %}
                             <img src="{{ url_for('static', filename='uploads/' ~ match_info.user.profile_picture) }}" alt="{{ match_info.user.first_name }}">
@@ -246,6 +393,11 @@
                     </div>
                     <div class="match-item-info">
                         <h6>{{ match_info.user.first_name }}</h6>
+                    </div>
+                    <div class="delete-button-container">
+                        <button class="delete-match-button" data-user-id="{{ match_info.user.user_id }}" title="Unmatch">
+                            &times;
+                        </button>
                     </div>
                 </div>
                 {% endif %}
@@ -269,42 +421,81 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <script>
-        const socket = io(); // Initialize SocketIO client
+        const socket = io();
         const messageInput = document.getElementById('chat-message-input');
-        const sendButton = document.getElementById('chat-send-button'); // Get the send button
+        const sendButton = document.getElementById('chat-send-button');
         const chatDisplay = document.getElementById('chat-display');
         
         let currentChatUserId = null;
         let currentChatUserName = null;
-        const currentLoggedInUserId = {{ current_user.user_id | tojson }}; // Correctly pass current_user.user_id as JSON
+        const currentLoggedInUserId = {{ current_user.user_id | tojson }}; 
 
-        function addMessageToDisplay(message, senderId, timestamp) {
+        // Modified addMessageToDisplay to handle messageId, editing, and deletion elements
+        function addMessageToDisplay(messageText, senderId, timestamp, messageId = null) { 
             const messageDiv = document.createElement('div');
-            // ใช้ class 'message-item' และ 'my-message'/'other-message'
-            const isMyMessage = (senderId == currentLoggedInUserId); 
+            const isMyMessage = (senderId == currentLoggedInUserId);
             messageDiv.classList.add('message-item');
             if (isMyMessage) {
                 messageDiv.classList.add('my-message');
+                // Add data-message-id for editing and a click listener for self-sent messages
+                if (messageId) {
+                    messageDiv.dataset.messageId = messageId;
+                    messageDiv.addEventListener('click', handleMessageClickToEdit); // Keep click for edit
+                }
             } else {
                 messageDiv.classList.add('other-message');
             }
 
             const date = new Date(timestamp);
-            // ปรับ format เวลาให้เป็น HH:MM
             const timeString = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
             messageDiv.innerHTML = `
-                <div class="message-content">${message}</div>
-                <div class="message-timestamp">${timeString}</div>
+                <div class="message-content">${messageText}</div>
+                <div class="message-edit-area">
+                    <textarea class="edit-textarea"></textarea>
+                    <div class="message-edit-actions">
+                        <button class="save-btn">Save</button>
+                        <button class="cancel-btn">Cancel</button>
+                    </div>
+                </div>
+                <div class="message-footer">
+                    <div class="message-timestamp">${timeString}</div>
+                    ${isMyMessage && messageId ? `<button class="message-delete-button" data-message-id="${messageId}" title="Delete Message">&times;</button>` : ''}
+                </div>
+                <div class="message-edited-label" style="display: none;">(Edited)</div>
             `;
             chatDisplay.appendChild(messageDiv);
-            chatDisplay.scrollTop = chatDisplay.scrollHeight; // Scroll to bottom
+            chatDisplay.scrollTop = chatDisplay.scrollHeight;
+
+            // Attach event listener for delete button here (since it's added dynamically)
+            if (isMyMessage && messageId) {
+                const deleteButton = messageDiv.querySelector('.message-delete-button');
+                if (deleteButton) {
+                    deleteButton.addEventListener('click', handleDeleteMessageClick);
+                }
+            }
+        }
+
+        function sendMessage() {
+            const message = messageInput.value.trim();
+            if (message && currentChatUserId) {
+                console.log(`Attempting to send message to ${currentChatUserName} (ID: ${currentChatUserId}): ${message}`);
+                
+                socket.emit('send_message', {
+                    sender_id: currentLoggedInUserId,
+                    recipient_id: parseInt(currentChatUserId),
+                    message: message
+                });
+
+                messageInput.value = ''; // Clear input immediately
+            } else if (!currentChatUserId) {
+                alert('Please select a chat to send a message.');
+            }
         }
 
         function loadChat(userId, userName) {
             console.log(`Loading chat with ${userName} (ID: ${userId})`);
             
-            // ถ้ามีการเปลี่ยนห้องแชท ให้ส่ง leave_chat ออกไปก่อน
             if (currentChatUserId && currentChatUserId !== userId) {
                 const oldRoom = [currentLoggedInUserId, parseInt(currentChatUserId)].sort().join('-');
                 socket.emit('leave_chat', { user_id: currentLoggedInUserId, room: oldRoom });
@@ -315,12 +506,10 @@
             currentChatUserName = userName;
             chatDisplay.innerHTML = `<p class="text-center text-muted">Loading chat with ${userName}...</p>`;
 
-            // Join the SocketIO room for this chat
-            const room = [currentLoggedInUserId, parseInt(userId)].sort().join('-'); // Ensure userId is integer for sorting
+            const room = [currentLoggedInUserId, parseInt(userId)].sort().join('-');
             socket.emit('join_chat', { user_id: currentLoggedInUserId, room: room });
             console.log(`Joined new room: ${room}`);
 
-            // Fetch existing messages for this chat via AJAX
             fetch(`/get_messages/${userId}`)
                 .then(response => {
                     if (!response.ok) {
@@ -329,12 +518,12 @@
                     return response.json();
                 })
                 .then(messages => {
-                    chatDisplay.innerHTML = ''; // Clear existing messages
+                    chatDisplay.innerHTML = '';
                     if (messages.length === 0) {
                         chatDisplay.innerHTML = `<p class="text-center text-muted">No messages yet with ${userName}.</p>`;
                     } else {
                         messages.forEach(msg => {
-                            addMessageToDisplay(msg.message, msg.sender_id, msg.timestamp);
+                            addMessageToDisplay(msg.message, msg.sender_id, msg.timestamp, msg.message_id);
                         });
                     }
                 })
@@ -344,61 +533,251 @@
                 });
         }
 
-        // Event listener for sending messages
-        sendButton.addEventListener('click', function(event) {
-            event.preventDefault(); // Prevent default form submission behavior
-            const message = messageInput.value.trim();
-            if (message && currentChatUserId) {
-                console.log(`Attempting to send message to ${currentChatUserName} (ID: ${currentChatUserId}): ${message}`);
-                
-                // Emit message to server
-                socket.emit('send_message', {
-                    sender_id: currentLoggedInUserId,
-                    recipient_id: parseInt(currentChatUserId),
-                    message: message
+        function deleteMatch(targetUserId) {
+            if (confirm(`Are you sure you want to unmatch with this user? This will also delete your chat history with them.`)) {
+                fetch('/unmatch', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ other_user_id: parseInt(targetUserId) })
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(errorData => {
+                            throw new Error(errorData.error || 'Network response was not ok');
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        alert(data.message);
+                        const matchItemToRemove = document.querySelector(`.match-item[data-user-id="${targetUserId}"]`);
+                        if (matchItemToRemove) {
+                            matchItemToRemove.remove();
+                        }
+                        if (currentChatUserId == targetUserId) {
+                            currentChatUserId = null;
+                            currentChatUserName = null;
+                            chatDisplay.innerHTML = '<p class="text-center text-muted">Select a chat to view messages.</p>';
+                        }
+                    } else {
+                        alert('Failed to unmatch: ' + (data.message || 'Unknown error.'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error unmatching:', error);
+                    alert('Error unmatching: ' + error.message);
                 });
+            }
+        }
 
-                // Local Echo: Add message to display immediately
-                const now = new Date();
-                addMessageToDisplay(message, currentLoggedInUserId, now.toISOString());
-                messageInput.value = ''; // Clear input field
-            } else if (!currentChatUserId) {
-                alert('Please select a chat to send a message.');
+        // NEW FUNCTION: To handle clicking on your own messages for editing
+        function handleMessageClickToEdit(event) {
+            // Prevent event propagation if click came from child elements (like timestamp or delete button)
+            if (event.target.closest('.message-delete-button') || this.classList.contains('editing')) {
+                return; 
+            }
+
+            const messageDiv = this;
+            const messageId = messageDiv.dataset.messageId;
+            const messageContentDiv = messageDiv.querySelector('.message-content');
+            const messageEditArea = messageDiv.querySelector('.message-edit-area');
+            const textarea = messageEditArea.querySelector('.edit-textarea');
+            const saveBtn = messageEditArea.querySelector('.save-btn');
+            const cancelBtn = messageEditArea.querySelector('.cancel-btn');
+            const originalText = messageContentDiv.textContent;
+
+            // Enter editing mode
+            messageDiv.classList.add('editing');
+            textarea.value = originalText;
+            textarea.focus();
+
+            const saveHandler = () => {
+                const newText = textarea.value.trim();
+                if (newText === originalText || newText === "") {
+                    // No change or empty message, just cancel editing
+                    cancelHandler();
+                    return;
+                }
+
+                fetch('/edit_message', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        message_id: parseInt(messageId),
+                        new_message_text: newText
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        exitEditingMode(); // Exit editing mode here
+                    } else {
+                        alert('Error updating message: ' + data.message);
+                        console.error('Edit message error:', data.message);
+                        exitEditingMode(); // Exit editing mode even on error
+                    }
+                })
+                .catch(error => {
+                    console.error('Error sending edit request:', error);
+                    alert('An error occurred while trying to edit the message.');
+                    exitEditingMode(); // Exit editing mode on network error
+                });
+            };
+
+            const cancelHandler = () => {
+                exitEditingMode();
+            };
+
+            const handleKeydown = (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    saveHandler();
+                } else if (e.key === 'Escape') {
+                    e.preventDefault();
+                    cancelHandler();
+                }
+            };
+
+            const exitEditingMode = () => {
+                messageDiv.classList.remove('editing');
+                // Remove event listeners to prevent memory leaks and duplicate handlers
+                saveBtn.removeEventListener('click', saveHandler);
+                cancelBtn.removeEventListener('click', cancelHandler);
+                textarea.removeEventListener('keydown', handleKeydown);
+            };
+
+            saveBtn.addEventListener('click', saveHandler);
+            cancelBtn.addEventListener('click', cancelHandler);
+            textarea.addEventListener('keydown', handleKeydown);
+        }
+
+        // NEW FUNCTION: To handle clicking on the delete message button
+        function handleDeleteMessageClick(event) {
+            event.stopPropagation(); // Prevent handleMessageClickToEdit from firing
+            const messageId = this.dataset.messageId;
+
+            if (confirm('Are you sure you want to delete this message?')) {
+                fetch('/delete_message', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        message_id: parseInt(messageId)
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Message deleted from DB, UI will be updated by SocketIO 'message_deleted' event
+                        console.log('Delete request sent. Waiting for SocketIO confirmation.');
+                    } else {
+                        alert('Error deleting message: ' + data.message);
+                        console.error('Delete message error:', data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error sending delete request:', error);
+                    alert('An error occurred while trying to delete the message.');
+                });
+            }
+        }
+
+
+        // NEW SocketIO listener for message edits
+        socket.on('message_edited', function(data) {
+            console.log('Message edited via SocketIO:', data);
+            const editedMessageId = data.message_id;
+            const newMessageText = data.new_message;
+            const editedLabel = "(Edited)";
+
+            const messageToUpdate = chatDisplay.querySelector(`.message-item[data-message-id="${editedMessageId}"]`);
+
+            if (messageToUpdate) {
+                const messageContentDiv = messageToUpdate.querySelector('.message-content');
+                const editedLabelDiv = messageToUpdate.querySelector('.message-edited-label');
+
+                if (messageContentDiv) {
+                    messageContentDiv.textContent = newMessageText;
+                }
+                if (editedLabelDiv) {
+                    editedLabelDiv.textContent = editedLabel;
+                    editedLabelDiv.style.display = 'block';
+                }
+                messageToUpdate.classList.remove('editing'); // Ensure not in editing mode
+            } else {
+                console.warn(`Message with ID ${editedMessageId} not found in current chat display.`);
             }
         });
 
-        // Listen for 'receive_message' events from the server
+        // NEW SocketIO listener for message deletions
+        socket.on('message_deleted', function(data) {
+            console.log('Message deleted via SocketIO:', data);
+            const deletedMessageId = data.message_id;
+
+            const messageToRemove = chatDisplay.querySelector(`.message-item[data-message-id="${deletedMessageId}"]`);
+
+            if (messageToRemove) {
+                messageToRemove.remove();
+                console.log(`Message with ID ${deletedMessageId} removed from display.`);
+            } else {
+                console.warn(`Message with ID ${deletedMessageId} not found in current chat display for removal.`);
+            }
+        });
+
+
+        sendButton.addEventListener('click', sendMessage);
+
+        messageInput.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter' && !event.shiftKey) { // Only send on Enter, allow Shift+Enter for new line
+                event.preventDefault();
+                sendMessage();
+            }
+        });
+
         socket.on('receive_message', function(data) {
             console.log('Received message from server:', data);
 
-            // Only display messages that are NOT from the current user AND are for the currently open chat
-            // This prevents duplicate messages if local echo is used.
-            // Also ensures messages are displayed only if the correct chat is open.
-            if (data.sender_id != currentLoggedInUserId && 
-                (data.sender_id == currentChatUserId || data.recipient_id == currentChatUserId)) {
+            if ((data.sender_id == currentLoggedInUserId && data.recipient_id == currentChatUserId) ||
+                (data.sender_id == currentChatUserId && data.recipient_id == currentLoggedInUserId)) {
                 
-                addMessageToDisplay(data.message, data.sender_id, data.timestamp);
-            }
-            // If the message is from me, it means it's the server echoing my own message.
-            // We already displayed it with Local Echo, so no action needed here.
-            else if (data.sender_id == currentLoggedInUserId && data.recipient_id == currentChatUserId) {
-                console.log("My own message echoed by server, already displayed locally.");
+                addMessageToDisplay(data.message, data.sender_id, data.timestamp, data.message_id);
+            } else {
+                 console.log("Message not for current chat or already displayed (my own echo).");
             }
         });
 
-        // Socket.IO connection events
         socket.on('connect', function() {
             console.log('Connected to WebSocket');
+            if (currentChatUserId) {
+                const room = [currentLoggedInUserId, parseInt(currentChatUserId)].sort().join('-');
+                socket.emit('join_chat', { user_id: currentLoggedInUserId, room: room });
+                console.log(`Re-joined room on connect: ${room}`);
+            }
         });
 
         socket.on('disconnect', function() {
             console.log('Disconnected from WebSocket');
         });
 
-        // Handle errors emitted from the server
         socket.on('error', function(data) {
             console.error('Socket Error:', data.message);
             alert('Error: ' + data.message);
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.delete-match-button').forEach(button => {
+                button.addEventListener('click', function(event) {
+                    event.stopPropagation();
+                    const userIdToDelete = this.dataset.userId;
+                    deleteMatch(userIdToDelete);
+                });
+            });
         });
     </script>
 </body>
